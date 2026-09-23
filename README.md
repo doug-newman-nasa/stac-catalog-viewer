@@ -137,7 +137,7 @@ stac-catalog-viewer/
 ## Example Usage
 
 1. Start the application: `npm run dev`
-2. Enter a STAC catalog endpoint (e.g., `https://planetarycomputer.microsoft.com/api/stac/v1`)
+2. Enter a STAC catalog endpoint (e.g., `https://cmr.earthdata.nasa.gov/stac`)
 3. Click "Load Catalog" to fetch and display the catalog
 4. Click the expand arrow (▶) to view child catalogs
 5. View metadata including titles, descriptions, and item/child counts
