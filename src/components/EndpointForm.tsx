@@ -2,7 +2,7 @@ import { useState } from 'react';
 import '../styles/EndpointForm.css';
 
 const STORAGE_KEY = 'stac_endpoint_url';
-const DEFAULT_ENDPOINT = 'https://planetarycomputer.microsoft.com/api/stac/v1';
+const DEFAULT_ENDPOINT = 'https://cmr.earthdata.nasa.gov/stac';
 
 interface EndpointFormProps {
   onSubmit: (url: string) => void;
@@ -28,7 +28,7 @@ export function EndpointForm({ onSubmit }: EndpointFormProps) {
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://example.com/api/stac/v1"
+          placeholder="https://cmr.earthdata.nasa.gov/stac"
         />
       </div>
       <button type="submit">Load Catalog</button>

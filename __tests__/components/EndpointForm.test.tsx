@@ -22,7 +22,7 @@ describe('EndpointForm', () => {
     render(<EndpointForm onSubmit={onSubmit} />);
 
     const input = screen.getByRole('textbox') as HTMLInputElement;
-    expect(input.value).toBe('https://planetarycomputer.microsoft.com/api/stac/v1');
+    expect(input.value).toBe('https://cmr.earthdata.nasa.gov/stac');
   });
 
   it('should load endpoint from localStorage if present', () => {
