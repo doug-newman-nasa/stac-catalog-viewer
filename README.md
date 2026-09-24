@@ -152,4 +152,6 @@ When making changes:
 
 ## License
 
-MIT
+This project is licensed under the NASA Open Source Agreement (NOSA) v1.3. See [LICENSE.md](LICENSE.md) for details.
+
+Copyright (c) 2026 United States Government as represented by the Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
