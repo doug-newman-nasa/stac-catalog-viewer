@@ -28,8 +28,8 @@ export function EndpointForm({ onSubmit }: EndpointFormProps) {
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://cmr.earthdata.nasa.gov/stac"
-        />
+          placeholder={DEFAULT_ENDPOINT}
+          ></input>
       </div>
       <button type="submit">Load Catalog</button>
     </form>
