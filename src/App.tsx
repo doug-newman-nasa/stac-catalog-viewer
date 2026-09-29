@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { EndpointForm } from './components/EndpointForm';
-import { CatalogTree } from './components/CatalogTree';
+import { CatalogPage } from './pages/CatalogPage';
 import './App.css';
 
 function App() {
-  const [rootUrl, setRootUrl] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const handleEndpointSubmit = (url: string) => {
-    setRootUrl(url);
+    navigate(`/catalog?url=${encodeURIComponent(url)}`);
   };
 
   return (
@@ -18,13 +18,17 @@ function App() {
       </header>
 
       <main className="app-main">
-        <EndpointForm onSubmit={handleEndpointSubmit} />
-
-        {rootUrl && (
-          <section className="catalog-section">
-            <CatalogTree rootUrl={rootUrl} />
-          </section>
-        )}
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <section className="form-section">
+                <EndpointForm onSubmit={handleEndpointSubmit} />
+              </section>
+            }
+          />
+          <Route path="/catalog" element={<CatalogPage />} />
+        </Routes>
       </main>
     </div>
   );
