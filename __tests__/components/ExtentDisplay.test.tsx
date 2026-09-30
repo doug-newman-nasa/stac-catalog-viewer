@@ -197,4 +197,91 @@ describe('ExtentDisplay', () => {
     expect(container.firstChild).toBeNull();
     expect(screen.queryByText('Temporal Extent')).not.toBeInTheDocument();
   });
+
+  it('should render spatial extent with 3-element bbox', () => {
+    const extent: Extent = {
+      spatial: {
+        bbox: [[1.5, 2.5, 3.5]],
+      },
+    };
+
+    render(<ExtentDisplay extent={extent} />);
+
+    expect(screen.getByText('Spatial Extent')).toBeInTheDocument();
+    expect(screen.getByText(/1\.50, 2\.50, 3\.50/)).toBeInTheDocument();
+  });
+
+  it('should render spatial extent with 5-element bbox', () => {
+    const extent: Extent = {
+      spatial: {
+        bbox: [[1.1, 2.2, 3.3, 4.4, 5.5]],
+      },
+    };
+
+    render(<ExtentDisplay extent={extent} />);
+
+    expect(screen.getByText('Spatial Extent')).toBeInTheDocument();
+    expect(screen.getByText(/1\.10, 2\.20, 3\.30, 4\.40, 5\.50/)).toBeInTheDocument();
+  });
+
+  it('should render spatial extent with 7-element bbox', () => {
+    const extent: Extent = {
+      spatial: {
+        bbox: [[1, 2, 3, 4, 5, 6, 7]],
+      },
+    };
+
+    render(<ExtentDisplay extent={extent} />);
+
+    expect(screen.getByText('Spatial Extent')).toBeInTheDocument();
+    expect(screen.getByText(/1\.00, 2\.00, 3\.00, 4\.00, 5\.00, 6\.00, 7\.00/)).toBeInTheDocument();
+  });
+
+  it('should render multiple mixed bbox formats', () => {
+    const extent: Extent = {
+      spatial: {
+        bbox: [
+          [-180, -90, 180, 90],
+          [-180, -90, 0, 180, 90, 1000],
+          [1, 2, 3],
+        ],
+      },
+    };
+
+    const { container } = render(<ExtentDisplay extent={extent} />);
+
+    expect(screen.getByText('Spatial Extent')).toBeInTheDocument();
+    const items = container.querySelectorAll('.extent-item');
+    expect(items.length).toBe(3);
+  });
+
+  it('should render extent with zero coordinate values', () => {
+    const extent: Extent = {
+      spatial: {
+        bbox: [[0, 0, 0, 0]],
+      },
+      temporal: {
+        interval: [['2000-01-01T00:00:00Z', '2000-01-01T00:00:00Z']],
+      },
+    };
+
+    render(<ExtentDisplay extent={extent} />);
+
+    expect(screen.getByText('Spatial Extent')).toBeInTheDocument();
+    expect(screen.getByText(/West: 0\.00°, South: 0\.00°, East: 0\.00°, North: 0\.00°/)).toBeInTheDocument();
+    expect(screen.getByText('Temporal Extent')).toBeInTheDocument();
+  });
+
+  it('should render extent with negative coordinate values', () => {
+    const extent: Extent = {
+      spatial: {
+        bbox: [[-180, -90, -10, -45]],
+      },
+    };
+
+    render(<ExtentDisplay extent={extent} />);
+
+    expect(screen.getByText('Spatial Extent')).toBeInTheDocument();
+    expect(screen.getByText(/West: -180\.00°, South: -90\.00°, East: -10\.00°, North: -45\.00°/)).toBeInTheDocument();
+  });
 });
