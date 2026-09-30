@@ -5,6 +5,19 @@ export interface StacLink {
   title?: string;
 }
 
+export interface SpatialExtent {
+  bbox: Array<number[]>;
+}
+
+export interface TemporalExtent {
+  interval: Array<(string | null)[]>;
+}
+
+export interface Extent {
+  spatial?: SpatialExtent;
+  temporal?: TemporalExtent;
+}
+
 export interface StacCatalog {
   type: string;
   stac_version: string;
@@ -12,6 +25,7 @@ export interface StacCatalog {
   title?: string;
   description: string;
   links: StacLink[];
+  extent?: Extent;
   [key: string]: unknown;
 }
 
