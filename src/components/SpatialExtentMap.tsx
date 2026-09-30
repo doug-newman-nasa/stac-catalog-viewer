@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { MapContainer, TileLayer, Rectangle, Tooltip } from 'react-leaflet';
 import type { Extent } from '../types/stac';
 import '../styles/SpatialExtentMap.css';
@@ -50,7 +49,12 @@ export function SpatialExtentMap({ extent }: SpatialExtentMapProps) {
         center={[centerLat, centerLon]}
         zoom={2}
         className="map-container"
-        scrollWheelZoom={true}
+        dragging={false}
+        touchZoom={false}
+        doubleClickZoom={false}
+        scrollWheelZoom={false}
+        zoomControl={false}
+        attributionControl={true}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
