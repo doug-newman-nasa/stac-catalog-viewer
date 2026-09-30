@@ -402,8 +402,8 @@ describe('CatalogPage', () => {
 
     renderWithRouter();
 
-    const pageInfo = screen.getByText(/page 1 of/i);
-    expect(pageInfo).toBeInTheDocument();
+    const pageInfos = screen.getAllByText(/page 1 of/i);
+    expect(pageInfos.length).toBeGreaterThan(0);
   });
 
   it('should change page when next button is clicked', () => {
@@ -429,12 +429,14 @@ describe('CatalogPage', () => {
     renderWithRouter();
 
     expect(screen.getByText('Child 1')).toBeInTheDocument();
-    expect(screen.getByText(/page 1 of/i)).toBeInTheDocument();
+    const pageInfos = screen.getAllByText(/page 1 of/i);
+    expect(pageInfos.length).toBeGreaterThan(0);
 
     const nextButtons = screen.getAllByRole('button', { name: /next/i });
     fireEvent.click(nextButtons[0]);
 
-    expect(screen.getByText(/page 2 of/i)).toBeInTheDocument();
+    const page2Infos = screen.getAllByText(/page 2 of/i);
+    expect(page2Infos.length).toBeGreaterThan(0);
   });
 
   it('should disable previous button on first page', () => {
@@ -485,7 +487,8 @@ describe('CatalogPage', () => {
 
     renderWithRouter();
 
-    expect(screen.getByText(/page 1 of 2/i)).toBeInTheDocument();
+    const pageInfosInitial = screen.getAllByText(/page 1 of 2/i);
+    expect(pageInfosInitial.length).toBeGreaterThan(0);
 
     const selects = screen.getAllByRole('combobox');
     const childPageSizeSelect = selects[0];

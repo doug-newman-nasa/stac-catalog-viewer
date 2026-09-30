@@ -460,6 +460,15 @@
   flex-wrap: wrap;
 }
 
+.pagination-top {
+  margin-top: 0;
+  margin-bottom: 16px;
+  padding-top: 0;
+  padding-bottom: 16px;
+  border-top: none;
+  border-bottom: 1px solid #f0f0f0;
+}
+
 .page-info {
   font-size: 13px;
   color: #888;

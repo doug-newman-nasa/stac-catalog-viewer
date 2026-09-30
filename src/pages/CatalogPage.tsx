@@ -165,6 +165,32 @@ export function CatalogPage() {
             </div>
           </div>
 
+          {getTotalPages(childLinks.length, childPageSize) > 1 && (
+            <div className="pagination pagination-top">
+              <span className="page-info">
+                Page {childCurrentPage} of {getTotalPages(childLinks.length, childPageSize)}
+              </span>
+              <div className="pagination-controls">
+                <button
+                  onClick={() => setChildCurrentPage(Math.max(1, childCurrentPage - 1))}
+                  disabled={childCurrentPage === 1}
+                  className="pagination-button"
+                >
+                  ← Previous
+                </button>
+                <button
+                  onClick={() =>
+                    setChildCurrentPage(Math.min(getTotalPages(childLinks.length, childPageSize), childCurrentPage + 1))
+                  }
+                  disabled={childCurrentPage === getTotalPages(childLinks.length, childPageSize)}
+                  className="pagination-button"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="child-list">
             {getPaginatedData(childLinks, childCurrentPage, childPageSize).map((link) => {
               const childUrl = resolveHref(url, link.href);
@@ -236,6 +262,32 @@ export function CatalogPage() {
               </label>
             </div>
           </div>
+
+          {getTotalPages(itemLinks.length, itemPageSize) > 1 && (
+            <div className="pagination pagination-top">
+              <span className="page-info">
+                Page {itemCurrentPage} of {getTotalPages(itemLinks.length, itemPageSize)}
+              </span>
+              <div className="pagination-controls">
+                <button
+                  onClick={() => setItemCurrentPage(Math.max(1, itemCurrentPage - 1))}
+                  disabled={itemCurrentPage === 1}
+                  className="pagination-button"
+                >
+                  ← Previous
+                </button>
+                <button
+                  onClick={() =>
+                    setItemCurrentPage(Math.min(getTotalPages(itemLinks.length, itemPageSize), itemCurrentPage + 1))
+                  }
+                  disabled={itemCurrentPage === getTotalPages(itemLinks.length, itemPageSize)}
+                  className="pagination-button"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="item-list">
             {getPaginatedData(itemLinks, itemCurrentPage, itemPageSize).map((link) => {
