@@ -1,15 +1,44 @@
 # STAC Catalog Viewer
 
-A React-based web application for exploring and browsing Spatiotemporal Asset Catalogs (STAC). This tool allows users to visually navigate STAC catalogs, view catalog metadata, and explore child catalogs and items in a hierarchical tree structure.
+A React-based web application for exploring and browsing Spatiotemporal Asset Catalogs (STAC). This tool allows users to visually navigate STAC catalogs, view comprehensive collection metadata, and explore child catalogs and items with pagination support.
 
 ## What It Does
 
 STAC Catalog Viewer provides an interactive interface to:
 - **Connect to STAC endpoints** — Enter a STAC catalog API endpoint URL
-- **Browse catalog hierarchies** — Navigate parent and child catalogs in a collapsible tree view
-- **View catalog metadata** — Display catalog titles, descriptions, and statistics
-- **Track items and children** — See counts of child catalogs and items at each level
+- **Browse catalog hierarchies** — Navigate parent and child catalogs with pagination controls
+- **View collection metadata** — Display catalog titles, descriptions, and statistics
+- **Explore temporal and spatial extents** — View temporal date ranges and spatial bounding boxes from collection metadata
+- **Browse collection images** — Display preview, browse, and thumbnail images from collection links and assets
+- **View collection keywords** — See topic and subject keywords associated with collections
+- **Paginate results** — Efficiently browse large collections with configurable page sizes (10, 25, 50, 100 items)
 - **Persistent endpoints** — Save your last used endpoint in browser storage
+
+## Features
+
+### Collection Metadata Display
+The application displays comprehensive collection information:
+
+- **Extent Information** — View temporal date ranges and spatial bounding boxes
+  - Temporal: Shows start and end dates for data collection periods
+  - Spatial: Displays geographic bounds in longitude/latitude with optional elevation data
+  
+- **Browse Images** — Visual preview of collection content
+  - Displays images from `preview` and `browse` links in catalog metadata
+  - Shows thumbnail and browse images from collection assets
+  - Supports multiple image types: JPEG, PNG, GIF, WebP
+  - Responsive grid layout with clickable links to full-resolution images
+  
+- **Keywords** — Collection topic and subject tags
+  - Displays keywords associated with the collection
+  - Tag-style presentation for easy scanning
+  - Supports special characters and unicode text
+
+### Pagination
+- Configurable page sizes: 10, 25, 50, or 100 items per page
+- Separate pagination for child catalogs and collection items
+- Top and bottom pagination controls for convenience
+- Support for paginated item search via the `items` link
 
 ## Prerequisites
 
@@ -73,10 +102,15 @@ npm run test:coverage
 Coverage reports are generated in the `coverage/` directory. Open `coverage/index.html` in a browser to view detailed coverage information.
 
 **Current Coverage:**
-- Statements: 100%
-- Lines: 100%
-- Functions: 100%
-- Branches: 95.83%
+- Statements: 97.35%
+- Lines: 97.18%
+- Functions: 92.2%
+- Branches: 96.62%
+
+**Test Statistics:**
+- Total Tests: 218+
+- Test Files: 10
+- Key Component Coverage: 100% (BrowseImagesDisplay, KeywordsDisplay, ExtentDisplay)
 
 ### Interactive Test UI
 
@@ -90,26 +124,32 @@ npm test:ui
 ```
 stac-catalog-viewer/
 ├── src/
-│   ├── components/          # React components
-│   │   ├── CatalogNode.tsx      # Individual catalog node in tree
-│   │   ├── CatalogTree.tsx      # Tree container
-│   │   └── EndpointForm.tsx     # URL input form
+│   ├── components/                    # React components
+│   │   ├── BrowseImagesDisplay.tsx      # Browse/preview image grid display
+│   │   ├── CatalogPage.tsx              # Main catalog collection view
+│   │   ├── ExtentDisplay.tsx            # Temporal and spatial extent display
+│   │   ├── KeywordsDisplay.tsx          # Collection keywords tag display
+│   │   └── ...                          # Other components
 │   ├── hooks/
-│   │   └── useStacNode.ts       # Hook for fetching STAC data
+│   │   ├── useStacNode.ts              # Hook for fetching STAC catalog data
+│   │   └── useStacItemsSearch.ts       # Hook for paginated items search
 │   ├── lib/
-│   │   └── stac.ts              # STAC utility functions
+│   │   └── stac.ts                     # STAC utility functions
+│   ├── pages/
+│   │   └── CatalogPage.tsx             # Catalog collection page
 │   ├── types/
-│   │   └── stac.ts              # TypeScript types
-│   ├── styles/                  # CSS modules
-│   ├── App.tsx                  # Root component
-│   └── main.tsx                 # Entry point
-├── __tests__/                 # Test files
-│   ├── components/              # Component tests
-│   ├── hooks/                   # Hook tests
-│   └── lib/                     # Utility tests
-├── vitest.config.ts           # Test configuration
-├── package.json               # Dependencies and scripts
-└── vite.config.ts             # Vite configuration
+│   │   └── stac.ts                     # TypeScript types
+│   ├── styles/                         # CSS stylesheets
+│   ├── App.tsx                         # Root component
+│   └── main.tsx                        # Entry point
+├── __tests__/                          # Test files
+│   ├── components/                     # Component tests
+│   ├── hooks/                          # Hook tests
+│   ├── lib/                            # Utility tests
+│   └── pages/                          # Page tests
+├── vitest.config.ts                   # Test configuration
+├── package.json                       # Dependencies and scripts
+└── vite.config.ts                     # Vite configuration
 ```
 
 ## Technology Stack
@@ -138,9 +178,15 @@ stac-catalog-viewer/
 
 1. Start the application: `npm run dev`
 2. Enter a STAC catalog endpoint (e.g., `https://cmr.earthdata.nasa.gov/stac`)
-3. Click "Load Catalog" to fetch and display the catalog
-4. Click the expand arrow (▶) to view child catalogs
-5. View metadata including titles, descriptions, and item/child counts
+3. Click "Load Catalog" to fetch and display the root catalog
+4. Browse collection information:
+   - View temporal and spatial extents
+   - See preview/browse images in a responsive grid
+   - Review keywords for the collection
+5. Click collection names to navigate child catalogs
+6. Adjust page size dropdown to view different numbers of items per page
+7. Use pagination controls to navigate through large collections
+8. Click item links to open full STAC item details in a new tab
 
 ## Contributing
 
