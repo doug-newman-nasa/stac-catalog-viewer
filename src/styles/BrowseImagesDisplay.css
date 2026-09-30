@@ -1,0 +1,79 @@
+.browse-images-display {
+  margin-top: 24px;
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  border-left: 4px solid #4caf50;
+}
+
+.browse-images-title {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.browse-images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.browse-image-item {
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: white;
+  border: 1px solid #ddd;
+  transition: box-shadow 0.2s ease;
+}
+
+.browse-image-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.browse-image-link {
+  display: block;
+  flex-shrink: 0;
+  width: 100%;
+  height: 150px;
+  overflow: hidden;
+  background-color: #f0f0f0;
+  text-decoration: none;
+}
+
+.browse-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.browse-image-item.image-error .browse-image-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  background-color: #f0f0f0;
+}
+
+.browse-image-item.image-error .browse-image-link::after {
+  content: 'Image failed to load';
+  color: #999;
+  font-size: 12px;
+  text-align: center;
+}
+
+.browse-image-caption {
+  margin: 8px;
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  word-wrap: break-word;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
