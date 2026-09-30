@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { CatalogPage } from '../../src/pages/CatalogPage';
 import type { StacCatalog } from '../../src/types/stac';
@@ -490,9 +490,10 @@ describe('CatalogPage', () => {
     const pageInfosInitial = screen.getAllByText(/page 1 of 2/i);
     expect(pageInfosInitial.length).toBeGreaterThan(0);
 
-    const selects = screen.getAllByRole('combobox');
-    const childPageSizeSelect = selects[0];
-    fireEvent.change(childPageSizeSelect, { target: { value: '50' } });
+    const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
+    const childPageSizeSelect = selects[0] as HTMLSelectElement;
+    childPageSizeSelect.value = '50';
+    fireEvent.change(childPageSizeSelect);
 
     expect(screen.getByText('Child 30')).toBeInTheDocument();
   });
@@ -524,5 +525,1144 @@ describe('CatalogPage', () => {
 
     const pageInfos = screen.getAllByText(/page 1 of/i);
     expect(pageInfos.length).toBeGreaterThan(0);
+  });
+
+  it('should navigate home when back button is clicked in no-URL error state', () => {
+    render(
+      <MemoryRouter initialEntries={['/catalog']}>
+        <Routes>
+          <Route path="/catalog" element={<CatalogPage />} />
+          <Route path="/" element={<div>Home</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const backButton = screen.getByRole('button', { name: /back to home/i });
+    fireEvent.click(backButton);
+
+    expect(screen.getByText('Home')).toBeInTheDocument();
+  });
+
+  it('should navigate back when back button is clicked in error state', () => {
+    const mockRetry = vi.fn();
+    vi.mocked(useStacNode).mockReturnValue({
+      data: null,
+      loading: false,
+      error: new Error('Failed to fetch'),
+      retry: mockRetry,
+    });
+
+    renderWithRouter();
+    const backButtons = screen.getAllByRole('button', { name: /← back/i });
+    const errorBackButton = backButtons.find((btn) =>
+      btn.closest('.error-actions')
+    );
+
+    expect(errorBackButton).toBeInTheDocument();
+  });
+
+  it('should navigate back when header back button is clicked', () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const backButtons = screen.getAllByRole('button', { name: /← back/i });
+    const headerBackButton = backButtons.find((btn) =>
+      btn.classList.contains('back-button-header')
+    );
+
+    expect(headerBackButton).toBeInTheDocument();
+  });
+
+  it('should navigate to next page from bottom pagination when next button is clicked on last page', () => {
+    const catalogWithManyChildren: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'large-catalog',
+      description: 'A catalog with many children',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'child',
+        href: `child${i}.json`,
+        title: `Child ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyChildren,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    fireEvent.click(nextButtons[nextButtons.length - 1]);
+
+    const page2Infos = screen.getAllByText(/page 2 of/i);
+    expect(page2Infos.length).toBeGreaterThan(0);
+  });
+
+  it('should navigate back from page 2 using previous button', () => {
+    const catalogWithManyChildren: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'large-catalog',
+      description: 'A catalog with many children',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'child',
+        href: `child${i}.json`,
+        title: `Child ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyChildren,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    fireEvent.click(nextButtons[0]);
+
+    expect(screen.getAllByText(/page 2 of/i).length).toBeGreaterThan(0);
+
+    const prevButtons = screen.getAllByRole('button', { name: /previous/i });
+    fireEvent.click(prevButtons[0]);
+
+    expect(screen.getAllByText(/page 1 of 2/i).length).toBeGreaterThan(0);
+  });
+
+  it('should disable next button on last page for items', () => {
+    const catalogWithManyItems: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'catalog-many-items',
+      description: 'A catalog with many items',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'item',
+        href: `item${i}.json`,
+        title: `Item ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyItems,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    const itemNextButton = nextButtons[nextButtons.length - 1];
+
+    fireEvent.click(itemNextButton);
+    fireEvent.click(itemNextButton);
+
+    const disabledNextButtons = screen.getAllByRole('button', { name: /next/i });
+    const lastNextButton = disabledNextButtons[disabledNextButtons.length - 1];
+    expect(lastNextButton).toBeDisabled();
+  });
+
+  it('should render both top and bottom pagination controls for large results', () => {
+    const catalogWithManyChildren: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'large-catalog',
+      description: 'A catalog with many children',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'child',
+        href: `child${i}.json`,
+        title: `Child ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyChildren,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const paginationElements = screen.getAllByText(/page 1 of 2/i);
+    expect(paginationElements.length).toBe(2);
+  });
+
+  it('should hide bottom pagination when moving to last page with all items shown', () => {
+    const catalogWithExactlyTwoPages: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'catalog-two-pages',
+      description: 'A catalog with exactly 50 items',
+      links: Array.from({ length: 50 }, (_, i) => ({
+        rel: 'item',
+        href: `item${i}.json`,
+        title: `Item ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithExactlyTwoPages,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    fireEvent.click(nextButtons[nextButtons.length - 1]);
+
+    const page2Infos = screen.getAllByText(/page 2 of 2/i);
+    expect(page2Infos.length).toBeGreaterThan(0);
+  });
+
+  it('should change page size for items', () => {
+    const catalogWithManyItems: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'catalog-many-items',
+      description: 'A catalog with many items',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'item',
+        href: `item${i}.json`,
+        title: `Item ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyItems,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const pageInfosInitial = screen.getAllByText(/page 1 of 2/i);
+    expect(pageInfosInitial.length).toBeGreaterThan(0);
+
+    const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
+    if (selects.length > 1) {
+      const itemPageSizeSelect = selects[selects.length - 1] as HTMLSelectElement;
+      itemPageSizeSelect.value = '50';
+      fireEvent.change(itemPageSizeSelect);
+
+      expect(screen.getByText('Item 30')).toBeInTheDocument();
+    }
+  });
+
+  it('should navigate back from header when back button is clicked and data loads', () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    const { container } = renderWithRouter();
+
+    const backButtonHeader = screen.getByRole('button', { name: /← back/i });
+    expect(backButtonHeader).toBeInTheDocument();
+    expect(backButtonHeader.classList.contains('back-button-header')).toBe(true);
+  });
+
+  it('should navigate back when back button is clicked in error state', () => {
+    const mockRetry = vi.fn();
+    vi.mocked(useStacNode).mockReturnValue({
+      data: null,
+      loading: false,
+      error: new Error('Failed to fetch'),
+      retry: mockRetry,
+    });
+
+    renderWithRouter();
+
+    const backButtons = screen.getAllByRole('button', { name: /← back/i });
+    const errorBackButton = backButtons.find((btn) =>
+      btn.className.includes('back-button')
+    );
+
+    expect(errorBackButton).toBeInTheDocument();
+  });
+
+  it('should navigate to previous page from bottom pagination for items', () => {
+    const catalogWithManyItems: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'catalog-many-items',
+      description: 'A catalog with many items',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'item',
+        href: `item${i}.json`,
+        title: `Item ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyItems,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    const itemNextButton = nextButtons[nextButtons.length - 1];
+    fireEvent.click(itemNextButton);
+
+    expect(screen.getAllByText(/page 2 of/i).length).toBeGreaterThan(0);
+
+    const prevButtons = screen.getAllByRole('button', { name: /previous/i });
+    const itemPrevButton = prevButtons[prevButtons.length - 1];
+    fireEvent.click(itemPrevButton);
+
+    expect(screen.getAllByText(/page 1 of 2/i).length).toBeGreaterThan(0);
+  });
+
+  it('should display correct items when navigating to page 2', () => {
+    const catalogWithManyItems: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'catalog-many-items',
+      description: 'A catalog with many items',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'item',
+        href: `item${i}.json`,
+        title: `Item ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyItems,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText('Item 1')).toBeInTheDocument();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    const itemNextButton = nextButtons[nextButtons.length - 1];
+    fireEvent.click(itemNextButton);
+
+    expect(screen.getByText('Item 26')).toBeInTheDocument();
+    expect(screen.queryByText('Item 1')).not.toBeInTheDocument();
+  });
+
+  it('should trigger error back button click handler', async () => {
+    const mockRetry = vi.fn();
+    vi.mocked(useStacNode).mockReturnValue({
+      data: null,
+      loading: false,
+      error: new Error('Failed to fetch'),
+      retry: mockRetry,
+    });
+
+    const { container: errorContainer } = renderWithRouter();
+
+    const errorBackButton = errorContainer.querySelector('.error-actions .back-button');
+    expect(errorBackButton).toBeInTheDocument();
+
+    fireEvent.click(errorBackButton as HTMLElement);
+  });
+
+  it('should trigger header back button click handler', async () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    const { container: headerContainer } = renderWithRouter();
+
+    const headerBackButton = headerContainer.querySelector('.back-button-header');
+    expect(headerBackButton).toBeInTheDocument();
+
+    fireEvent.click(headerBackButton as HTMLElement);
+  });
+
+  it('should trigger child catalog previous button at bottom pagination', async () => {
+    const catalogWithManyChildren: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'large-catalog',
+      description: 'A catalog with many children',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'child',
+        href: `child${i}.json`,
+        title: `Child ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyChildren,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    fireEvent.click(nextButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Child 26')).toBeInTheDocument();
+    });
+
+    const allPrevButtons = screen.getAllByRole('button', { name: /previous/i });
+    expect(allPrevButtons.length).toBeGreaterThan(0);
+    fireEvent.click(allPrevButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Child 1')).toBeInTheDocument();
+    });
+  });
+
+  it('should trigger item pagination previous button at bottom', async () => {
+    const catalogWithManyItems: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'catalog-many-items',
+      description: 'A catalog with many items',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'item',
+        href: `item${i}.json`,
+        title: `Item ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyItems,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    fireEvent.click(nextButtons[nextButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Item 26')).toBeInTheDocument();
+    });
+
+    const prevButtons = screen.getAllByRole('button', { name: /previous/i });
+    fireEvent.click(prevButtons[prevButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Item 1')).toBeInTheDocument();
+    });
+  });
+
+  it('should show copied confirmation and then hide it after timeout', async () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    const mockClipboard = {
+      writeText: vi.fn().mockResolvedValue(undefined),
+    };
+    Object.assign(navigator, { clipboard: mockClipboard });
+
+    renderWithRouter();
+
+    const toggleButton = screen.getByRole('button', { name: /show url/i });
+    fireEvent.click(toggleButton);
+
+    const copyButton = screen.getByRole('button', { name: /copy/i });
+    fireEvent.click(copyButton);
+
+    expect(screen.getByRole('button', { name: /✓ copied!/i })).toBeInTheDocument();
+
+    await waitFor(
+      () => {
+        expect(screen.getByRole('button', { name: /copy/i })).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+  });
+
+  it('should handle clipboard write failure gracefully', async () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    const mockClipboard = {
+      writeText: vi.fn().mockRejectedValue(new Error('Clipboard denied')),
+    };
+    Object.assign(navigator, { clipboard: mockClipboard });
+
+    renderWithRouter();
+
+    const toggleButton = screen.getByRole('button', { name: /show url/i });
+    fireEvent.click(toggleButton);
+
+    const copyButton = screen.getByRole('button', { name: /copy/i });
+    fireEvent.click(copyButton);
+
+    expect(mockClipboard.writeText).toHaveBeenCalledWith(
+      'https://example.com/catalog.json'
+    );
+  });
+
+  it('should render catalog with only title (no id shown when same)', () => {
+    const catalogWithSameTitleAndId: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'same-title-and-id',
+      title: 'same-title-and-id',
+      description: 'A catalog',
+      links: [],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithSameTitleAndId,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    const { container } = renderWithRouter();
+
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
+      'same-title-and-id'
+    );
+    const codeElements = container.querySelectorAll('.catalog-id');
+    expect(codeElements.length).toBe(0);
+  });
+
+  it('should render catalog without title (show id as title)', () => {
+    const catalogWithoutTitle: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'catalog-without-title',
+      description: 'A catalog without title',
+      links: [],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithoutTitle,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
+      'catalog-without-title'
+    );
+  });
+
+  it('should render catalog without description', () => {
+    const catalogWithoutDescription: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'no-desc-catalog',
+      links: [],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithoutDescription,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
+      'no-desc-catalog'
+    );
+    expect(screen.queryByText(/a catalog/i)).not.toBeInTheDocument();
+  });
+
+  it('should render child link without type', () => {
+    const catalogWithUnTypedChild: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      title: 'Test Catalog',
+      description: 'A test catalog',
+      links: [{ rel: 'child', href: 'child1.json', title: 'Child 1' }],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithUnTypedChild,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText('Child 1')).toBeInTheDocument();
+  });
+
+  it('should render child link with type', () => {
+    const catalogWithTypedChild: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      title: 'Test Catalog',
+      description: 'A test catalog',
+      links: [
+        {
+          rel: 'child',
+          href: 'child1.json',
+          title: 'Child 1',
+          type: 'application/json',
+        },
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithTypedChild,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText('Child 1')).toBeInTheDocument();
+    expect(screen.getByText('application/json')).toBeInTheDocument();
+  });
+
+  it('should render child link without title', () => {
+    const catalogWithUntitledChild: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      title: 'Test Catalog',
+      description: 'A test catalog',
+      links: [{ rel: 'child', href: 'child1.json' }],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithUntitledChild,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText('Untitled')).toBeInTheDocument();
+  });
+
+  it('should render item link without title', () => {
+    const catalogWithUntitledItem: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      title: 'Test Catalog',
+      description: 'A test catalog',
+      links: [{ rel: 'item', href: 'item1.json' }],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithUntitledItem,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText('Untitled Item')).toBeInTheDocument();
+  });
+
+  it('should not show pagination when only one page of children', () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const paginationControls = screen.queryAllByText(/page 1 of 1/i);
+    expect(paginationControls.length).toBe(0);
+  });
+
+  it('should not show pagination when only one page of items', () => {
+    const catalogWithFewItems: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      title: 'Test Catalog',
+      description: 'A test catalog',
+      links: [
+        { rel: 'item', href: 'item1.json', title: 'Item 1' },
+        { rel: 'item', href: 'item2.json', title: 'Item 2' },
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithFewItems,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const paginationControls = screen.queryAllByText(/page 1 of 1/i);
+    expect(paginationControls.length).toBe(0);
+  });
+
+  it('should disable next button on last page for children', () => {
+    const catalogWithManyChildren: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'large-catalog',
+      description: 'A catalog with many children',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'child',
+        href: `child${i}.json`,
+        title: `Child ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyChildren,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    const childNextButton = nextButtons[0];
+
+    fireEvent.click(childNextButton);
+    fireEvent.click(childNextButton);
+
+    const disabledNextButtons = screen.getAllByRole('button', { name: /next/i });
+    const lastChildNextButton = disabledNextButtons[0];
+    expect(lastChildNextButton).toBeDisabled();
+  });
+
+  it('should resolve relative URLs for child catalogs correctly', () => {
+    const catalogWithRelativeUrl: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      title: 'Test Catalog',
+      description: 'A test catalog',
+      links: [{ rel: 'child', href: '../child/catalog.json', title: 'Child' }],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithRelativeUrl,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter('https://example.com/catalogs/main/catalog.json');
+
+    const childLink = screen.getByText('Child').closest('a');
+    expect(childLink).toHaveAttribute('href');
+    expect(childLink?.getAttribute('href')).toContain('/catalog?url=');
+  });
+
+  it('should show singular "child" for exactly one child', () => {
+    const catalogWithOneChild: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      title: 'Test Catalog',
+      description: 'A test catalog',
+      links: [{ rel: 'child', href: 'child1.json', title: 'Child 1' }],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithOneChild,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText(/1 child$/)).toBeInTheDocument();
+  });
+
+  it('should show singular "item" for exactly one item', () => {
+    const catalogWithOneItem: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      title: 'Test Catalog',
+      description: 'A test catalog',
+      links: [{ rel: 'item', href: 'item1.json', title: 'Item 1' }],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithOneItem,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText(/1 item$/)).toBeInTheDocument();
+  });
+
+  it('should show child and item stats together', () => {
+    const catalogWithBoth: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      title: 'Test Catalog',
+      description: 'A test catalog',
+      links: [
+        { rel: 'child', href: 'child1.json', title: 'Child 1' },
+        { rel: 'item', href: 'item1.json', title: 'Item 1' },
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithBoth,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText(/1 child$/)).toBeInTheDocument();
+    expect(screen.getByText(/1 item$/)).toBeInTheDocument();
+  });
+
+  it('should not show stats when catalog has no children or items', () => {
+    const catalogWithoutChildrenOrItems: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      title: 'Test Catalog',
+      description: 'A test catalog',
+      links: [],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithoutChildrenOrItems,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.queryByText(/children/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/item/)).not.toBeInTheDocument();
+  });
+
+  it('should update child page to 1 when changing page size', () => {
+    const catalogWithManyChildren: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'large-catalog',
+      description: 'A catalog with many children',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'child',
+        href: `child${i}.json`,
+        title: `Child ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyChildren,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    fireEvent.click(nextButtons[0]);
+
+    expect(screen.getAllByText(/page 2 of/i).length).toBeGreaterThan(0);
+
+    const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
+    const childPageSizeSelect = selects[0] as HTMLSelectElement;
+    childPageSizeSelect.value = '50';
+    fireEvent.change(childPageSizeSelect);
+
+    expect(screen.getByText('Child 1')).toBeInTheDocument();
+    expect(screen.getByText('Child 30')).toBeInTheDocument();
+  });
+
+  it('should update item page to 1 when changing page size', () => {
+    const catalogWithManyItems: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'catalog-many-items',
+      description: 'A catalog with many items',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'item',
+        href: `item${i}.json`,
+        title: `Item ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyItems,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    fireEvent.click(nextButtons[nextButtons.length - 1]);
+
+    expect(screen.getAllByText(/page 2 of/i).length).toBeGreaterThan(0);
+
+    const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
+    const itemPageSizeSelect = selects[selects.length - 1] as HTMLSelectElement;
+    itemPageSizeSelect.value = '50';
+    fireEvent.change(itemPageSizeSelect);
+
+    expect(screen.getByText('Item 1')).toBeInTheDocument();
+    expect(screen.getByText('Item 30')).toBeInTheDocument();
+  });
+
+  it('should render URL correctly when URL has query parameters', () => {
+    const url = 'https://example.com/catalog.json?param=value';
+    const catalogData: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      title: 'Test Catalog',
+      description: 'A test catalog',
+      links: [],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogData,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter(url);
+
+    const toggleButton = screen.getByRole('button', { name: /show url/i });
+    fireEvent.click(toggleButton);
+
+    expect(screen.getByText(url)).toBeInTheDocument();
+  });
+
+  it('should handle catalog with many children and many items', () => {
+    const catalogWithManyChildrenAndItems: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      title: 'Test Catalog',
+      description: 'A test catalog',
+      links: [
+        ...Array.from({ length: 30 }, (_, i) => ({
+          rel: 'child',
+          href: `child${i}.json`,
+          title: `Child ${i + 1}`,
+        })),
+        ...Array.from({ length: 30 }, (_, i) => ({
+          rel: 'item',
+          href: `item${i}.json`,
+          title: `Item ${i + 1}`,
+        })),
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyChildrenAndItems,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText(/30 children/)).toBeInTheDocument();
+    expect(screen.getByText(/30 items/)).toBeInTheDocument();
+
+    const pageInfos = screen.getAllByText(/page 1 of/i);
+    expect(pageInfos.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('should enable previous button when not on first page for children', () => {
+    const catalogWithManyChildren: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'large-catalog',
+      description: 'A catalog with many children',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'child',
+        href: `child${i}.json`,
+        title: `Child ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyChildren,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    fireEvent.click(nextButtons[0]);
+
+    const prevButtons = screen.getAllByRole('button', { name: /previous/i });
+    expect(prevButtons[0]).not.toBeDisabled();
+  });
+
+  it('should enable next button when not on last page for children', () => {
+    const catalogWithManyChildren: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'large-catalog',
+      description: 'A catalog with many children',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'child',
+        href: `child${i}.json`,
+        title: `Child ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyChildren,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    expect(nextButtons[0]).not.toBeDisabled();
+  });
+
+  it('should enable previous button when not on first page for items', () => {
+    const catalogWithManyItems: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'catalog-many-items',
+      description: 'A catalog with many items',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'item',
+        href: `item${i}.json`,
+        title: `Item ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyItems,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    fireEvent.click(nextButtons[nextButtons.length - 1]);
+
+    const prevButtons = screen.getAllByRole('button', { name: /previous/i });
+    expect(prevButtons[prevButtons.length - 1]).not.toBeDisabled();
+  });
+
+  it('should enable next button when not on last page for items', () => {
+    const catalogWithManyItems: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'catalog-many-items',
+      description: 'A catalog with many items',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'item',
+        href: `item${i}.json`,
+        title: `Item ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyItems,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    expect(nextButtons[nextButtons.length - 1]).not.toBeDisabled();
+  });
+
+  it('should render pagination top and bottom with correct controls', () => {
+    const catalogWithExactlyOnePagePlusPlusOfChildren: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'catalog',
+      title: 'Catalog',
+      description: 'A catalog',
+      links: Array.from({ length: 51 }, (_, i) => ({
+        rel: 'child',
+        href: `child${i}.json`,
+        title: `Child ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithExactlyOnePagePlusPlusOfChildren,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const allPageInfos = screen.getAllByText(/page 1 of 3/i);
+    expect(allPageInfos.length).toBe(2);
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    expect(nextButtons.length).toBe(2);
+
+    const prevButtons = screen.getAllByRole('button', { name: /previous/i });
+    expect(prevButtons.length).toBe(2);
   });
 });
