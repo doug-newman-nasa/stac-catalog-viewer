@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, withLimit, fetchItemCollection, resolveHref } from '../../src/lib/stac';
+import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, withLimit, fetchItemCollection, resolveHref } from '../../src/lib/stac';
 import type { StacCatalog } from '../../src/types/stac';
 
 describe('stac utilities', () => {
@@ -270,6 +270,214 @@ describe('stac utilities', () => {
         type: 'image/jpeg',
         title: 'True Color Preview',
       });
+    });
+  });
+
+  describe('getBrowseAssets', () => {
+    it('should return browse assets from catalog', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        assets: {
+          thumbnail: {
+            href: 'https://example.com/thumb.jpg',
+            type: 'image/jpeg',
+            title: 'Thumbnail',
+          },
+          preview: {
+            href: 'https://example.com/preview.png',
+            type: 'image/png',
+          },
+        },
+      };
+
+      const result = getBrowseAssets(catalog);
+      expect(result).toHaveLength(2);
+      expect(result.some((asset) => asset.href === 'https://example.com/thumb.jpg')).toBe(true);
+      expect(result.some((asset) => asset.href === 'https://example.com/preview.png')).toBe(true);
+    });
+
+    it('should filter assets by type', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        assets: {
+          thumbnail: {
+            href: 'https://example.com/thumb.jpg',
+            type: 'image/jpeg',
+          },
+          data: {
+            href: 'https://example.com/data.tif',
+            type: 'image/tiff',
+          },
+          readme: {
+            href: 'https://example.com/readme.txt',
+            type: 'text/plain',
+          },
+        },
+      };
+
+      const result = getBrowseAssets(catalog);
+      expect(result.every((asset) => asset.href.includes('jpg') || asset.href.includes('tif'))).toBe(true);
+    });
+
+    it('should return empty array when no assets', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+      };
+
+      const result = getBrowseAssets(catalog);
+      expect(result).toEqual([]);
+    });
+
+    it('should return empty array when assets is undefined', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        assets: undefined,
+      };
+
+      const result = getBrowseAssets(catalog);
+      expect(result).toEqual([]);
+    });
+
+    it('should handle assets without type field', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        assets: {
+          image: {
+            href: 'https://example.com/image.jpg',
+          },
+        },
+      };
+
+      const result = getBrowseAssets(catalog);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should accept assets with browse in type', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        assets: {
+          browse: {
+            href: 'https://example.com/browse.jpg',
+            type: 'application/browse',
+          },
+        },
+      };
+
+      const result = getBrowseAssets(catalog);
+      expect(result).toHaveLength(1);
+    });
+
+    it('should accept assets with thumbnail in type', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        assets: {
+          thumb: {
+            href: 'https://example.com/thumb.jpg',
+            type: 'image/thumbnail',
+          },
+        },
+      };
+
+      const result = getBrowseAssets(catalog);
+      expect(result).toHaveLength(1);
+    });
+
+    it('should use asset key as title when title is missing', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        assets: {
+          browse_image: {
+            href: 'https://example.com/browse.jpg',
+            type: 'image/jpeg',
+          },
+        },
+      };
+
+      const result = getBrowseAssets(catalog);
+      expect(result[0].title).toBe('browse_image');
+    });
+
+    it('should preserve asset title when present', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        assets: {
+          browse: {
+            href: 'https://example.com/browse.jpg',
+            type: 'image/jpeg',
+            title: 'Browse Image',
+          },
+        },
+      };
+
+      const result = getBrowseAssets(catalog);
+      expect(result[0].title).toBe('Browse Image');
+    });
+
+    it('should handle multiple image type formats', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        assets: {
+          jpeg: {
+            href: 'https://example.com/image.jpg',
+            type: 'image/jpeg',
+          },
+          png: {
+            href: 'https://example.com/image.png',
+            type: 'image/png',
+          },
+          gif: {
+            href: 'https://example.com/image.gif',
+            type: 'image/gif',
+          },
+          webp: {
+            href: 'https://example.com/image.webp',
+            type: 'image/webp',
+          },
+        },
+      };
+
+      const result = getBrowseAssets(catalog);
+      expect(result).toHaveLength(4);
     });
   });
 

@@ -46,6 +46,23 @@ export function getBrowseLinks(catalog: StacCatalog): StacLink[] {
   return catalog.links.filter((link) => link.rel === 'preview' || link.rel === 'browse');
 }
 
+export function getBrowseAssets(catalog: StacCatalog): Array<{ href: string; title?: string; type?: string }> {
+  if (!catalog.assets) return [];
+  return Object.entries(catalog.assets)
+    .filter(([_, asset]) => {
+      if (!asset.type) return false;
+      return asset.type === 'image/jpeg' || asset.type === 'image/png' || asset.type === 'image/gif' || asset.type === 'image/webp' ||
+             (asset.type && asset.type.startsWith('image/')) ||
+             asset.type.includes('browse') ||
+             asset.type.includes('thumbnail');
+    })
+    .map(([key, asset]) => ({
+      href: asset.href,
+      title: asset.title || key,
+      type: asset.type,
+    }));
+}
+
 export function withLimit(href: string, limit: number): string {
   const url = new URL(href);
   url.searchParams.set('limit', String(limit));

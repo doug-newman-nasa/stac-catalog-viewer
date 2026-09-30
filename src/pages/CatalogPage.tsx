@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useStacNode } from '../hooks/useStacNode';
 import { useStacItemsSearch } from '../hooks/useStacItemsSearch';
-import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, resolveHref } from '../lib/stac';
+import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, resolveHref } from '../lib/stac';
 import { ExtentDisplay } from '../components/ExtentDisplay';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
 import '../styles/CatalogPage.css';
@@ -86,6 +86,16 @@ export function CatalogPage() {
   const childLinks = getChildLinks(data);
   const itemLinks = getItemLinks(data);
   const browseLinks = getBrowseLinks(data);
+  const browseAssets = getBrowseAssets(data);
+  const browseImages = [
+    ...browseLinks,
+    ...browseAssets.map((asset) => ({
+      rel: 'browse',
+      href: asset.href,
+      title: asset.title,
+      type: asset.type,
+    })),
+  ];
 
   return (
     <div className="catalog-page">
@@ -147,7 +157,7 @@ export function CatalogPage() {
           </div>
         </div>
         {data.extent && <ExtentDisplay extent={data.extent} />}
-        {browseLinks.length > 0 && <BrowseImagesDisplay images={browseLinks} baseUrl={url} />}
+        {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} baseUrl={url} />}
       </div>
 
       {childLinks.length > 0 && (

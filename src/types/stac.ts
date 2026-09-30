@@ -5,6 +5,15 @@ export interface StacLink {
   title?: string;
 }
 
+export interface StacAsset {
+  href: string;
+  title?: string;
+  description?: string;
+  type?: string;
+  roles?: string[];
+  [key: string]: unknown;
+}
+
 export interface SpatialExtent {
   bbox: Array<number[]>;
 }
@@ -26,6 +35,7 @@ export interface StacCatalog {
   description: string;
   links: StacLink[];
   extent?: Extent;
+  assets?: Record<string, StacAsset>;
   [key: string]: unknown;
 }
 
