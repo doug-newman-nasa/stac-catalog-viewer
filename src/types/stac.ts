@@ -36,6 +36,7 @@ export interface StacCatalog {
   links: StacLink[];
   extent?: Extent;
   assets?: Record<string, StacAsset>;
+  keywords?: string[];
   [key: string]: unknown;
 }
 

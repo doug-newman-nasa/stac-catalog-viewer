@@ -1,0 +1,42 @@
+.keywords-display {
+  margin-top: 16px;
+  padding: 16px;
+  background-color: #f0f7f0;
+  border-radius: 4px;
+  border-left: 4px solid #ff9800;
+}
+
+.keywords-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.keywords-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.keyword-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: #fff3e0;
+  border: 1px solid #ffe0b2;
+  border-radius: 16px;
+  font-size: 13px;
+  color: #e65100;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.keyword-tag:hover {
+  background-color: #ffe0b2;
+  cursor: default;
+}
