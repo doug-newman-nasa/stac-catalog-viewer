@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, withLimit, fetchItemCollection, resolveHref } from '../../src/lib/stac';
+import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, withLimit, fetchItemCollection, resolveHref } from '../../src/lib/stac';
 import type { StacCatalog } from '../../src/types/stac';
 
 describe('stac utilities', () => {
@@ -173,6 +173,103 @@ describe('stac utilities', () => {
 
       const result = getItemsLink(catalog);
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe('getBrowseLinks', () => {
+    it('should return only preview links', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [
+          { rel: 'preview', href: 'preview.jpg', type: 'image/jpeg' },
+          { rel: 'item', href: 'item.json' },
+          { rel: 'preview', href: 'preview2.jpg', type: 'image/jpeg' },
+        ],
+      };
+
+      const result = getBrowseLinks(catalog);
+      expect(result).toHaveLength(2);
+      expect(result.every((link) => link.rel === 'preview')).toBe(true);
+    });
+
+    it('should return browse links', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [
+          { rel: 'browse', href: 'browse.jpg', type: 'image/jpeg' },
+          { rel: 'item', href: 'item.json' },
+        ],
+      };
+
+      const result = getBrowseLinks(catalog);
+      expect(result).toHaveLength(1);
+      expect(result[0].rel).toBe('browse');
+    });
+
+    it('should return both preview and browse links', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [
+          { rel: 'preview', href: 'preview.jpg', type: 'image/jpeg' },
+          { rel: 'browse', href: 'browse.jpg', type: 'image/jpeg' },
+          { rel: 'child', href: 'child.json' },
+        ],
+      };
+
+      const result = getBrowseLinks(catalog);
+      expect(result).toHaveLength(2);
+      expect(result.some((link) => link.rel === 'preview')).toBe(true);
+      expect(result.some((link) => link.rel === 'browse')).toBe(true);
+    });
+
+    it('should return empty array if no browse links', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [
+          { rel: 'child', href: 'child.json' },
+          { rel: 'item', href: 'item.json' },
+        ],
+      };
+
+      const result = getBrowseLinks(catalog);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should preserve link metadata', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [
+          {
+            rel: 'preview',
+            href: 'preview.jpg',
+            type: 'image/jpeg',
+            title: 'True Color Preview',
+          },
+        ],
+      };
+
+      const result = getBrowseLinks(catalog);
+      expect(result[0]).toEqual({
+        rel: 'preview',
+        href: 'preview.jpg',
+        type: 'image/jpeg',
+        title: 'True Color Preview',
+      });
     });
   });
 

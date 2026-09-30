@@ -42,6 +42,10 @@ export function getItemsLink(catalog: StacCatalog): StacLink | undefined {
   return catalog.links.find((link) => link.rel === 'items');
 }
 
+export function getBrowseLinks(catalog: StacCatalog): StacLink[] {
+  return catalog.links.filter((link) => link.rel === 'preview' || link.rel === 'browse');
+}
+
 export function withLimit(href: string, limit: number): string {
   const url = new URL(href);
   url.searchParams.set('limit', String(limit));
