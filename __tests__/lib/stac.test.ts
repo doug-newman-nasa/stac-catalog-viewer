@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, withLimit, fetchItemCollection, resolveHref } from '../../src/lib/stac';
+import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, withLimit, fetchItemCollection, resolveHref } from '../../src/lib/stac';
 import type { StacCatalog } from '../../src/types/stac';
 
 describe('stac utilities', () => {
@@ -478,6 +478,93 @@ describe('stac utilities', () => {
 
       const result = getBrowseAssets(catalog);
       expect(result).toHaveLength(4);
+    });
+  });
+
+  describe('getKeywords', () => {
+    it('should return keywords from catalog', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        keywords: ['climate', 'temperature', 'atmosphere'],
+      };
+
+      const result = getKeywords(catalog);
+      expect(result).toEqual(['climate', 'temperature', 'atmosphere']);
+    });
+
+    it('should return empty array when no keywords', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+      };
+
+      const result = getKeywords(catalog);
+      expect(result).toEqual([]);
+    });
+
+    it('should return empty array when keywords is undefined', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        keywords: undefined,
+      };
+
+      const result = getKeywords(catalog);
+      expect(result).toEqual([]);
+    });
+
+    it('should return single keyword', () => {
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        keywords: ['single-keyword'],
+      };
+
+      const result = getKeywords(catalog);
+      expect(result).toEqual(['single-keyword']);
+    });
+
+    it('should preserve keyword order', () => {
+      const keywords = ['z', 'a', 'm', 'b'];
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        keywords,
+      };
+
+      const result = getKeywords(catalog);
+      expect(result).toEqual(keywords);
+    });
+
+    it('should handle special characters in keywords', () => {
+      const keywords = ['sea-ice', 'CO2', 'soil_moisture', 'H2O'];
+      const catalog: StacCatalog = {
+        type: 'Collection',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+        keywords,
+      };
+
+      const result = getKeywords(catalog);
+      expect(result).toEqual(keywords);
     });
   });
 

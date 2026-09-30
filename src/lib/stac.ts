@@ -63,6 +63,10 @@ export function getBrowseAssets(catalog: StacCatalog): Array<{ href: string; tit
     }));
 }
 
+export function getKeywords(catalog: StacCatalog): string[] {
+  return catalog.keywords || [];
+}
+
 export function withLimit(href: string, limit: number): string {
   const url = new URL(href);
   url.searchParams.set('limit', String(limit));
