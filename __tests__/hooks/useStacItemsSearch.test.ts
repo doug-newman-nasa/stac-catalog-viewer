@@ -369,4 +369,176 @@ describe('useStacItemsSearch', () => {
 
     expect(result.current.error).not.toBeNull();
   });
+
+
+  it('should not call goNext when currentPage is null', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockItemCollection,
+    } as Response);
+
+    const { result } = renderHook(() => useStacItemsSearch(null));
+
+    expect(result.current.loading).toBe(false);
+
+    const initialFetchCount = vi.mocked(fetch).mock.calls.length;
+
+    await act(async () => {
+      result.current.goNext();
+    });
+
+    expect(vi.mocked(fetch).mock.calls.length).toBe(initialFetchCount);
+  });
+
+  it('should not call goNext when there is no next link', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockLastPage,
+    } as Response);
+
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.hasNext).toBe(false);
+
+    const initialFetchCount = vi.mocked(fetch).mock.calls.length;
+
+    await act(async () => {
+      result.current.goNext();
+    });
+
+    expect(vi.mocked(fetch).mock.calls.length).toBe(initialFetchCount);
+  });
+
+  it('should handle non-Error exceptions in fetchPage', async () => {
+    vi.mocked(fetch).mockRejectedValueOnce('String error');
+
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.error).not.toBeNull();
+    expect(result.current.error?.message).toBe('String error');
+  });
+
+  it('should handle non-Error exceptions in goNext', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockItemCollection,
+      } as Response)
+      .mockRejectedValueOnce('String error in goNext');
+
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    await act(async () => {
+      result.current.goNext();
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+    });
+
+    expect(result.current.error?.message).toBe('String error in goNext');
+  });
+
+  it('should handle retry when itemsHref is null', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockItemCollection,
+    } as Response);
+
+    const { result } = renderHook(() => useStacItemsSearch(null));
+
+    expect(result.current.loading).toBe(false);
+
+    const initialFetchCount = vi.mocked(fetch).mock.calls.length;
+
+    await act(async () => {
+      result.current.retry();
+    });
+
+    expect(vi.mocked(fetch).mock.calls.length).toBe(initialFetchCount);
+  });
+
+  it('should not navigate previous on first page', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockItemCollection,
+    } as Response);
+
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.hasPrevious).toBe(false);
+    expect(result.current.page).toBe(1);
+
+    await act(async () => {
+      result.current.goPrevious();
+    });
+
+    expect(result.current.page).toBe(1);
+  });
+
+  it('should use cached page when navigating with goNext', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockItemCollection,
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSecondPage,
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockLastPage,
+      } as Response);
+
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 2));
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    const firstPageFetch = vi.mocked(fetch).mock.calls.length;
+
+    await act(async () => {
+      result.current.goNext();
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+    });
+
+    expect(result.current.page).toBe(2);
+
+    await act(async () => {
+      result.current.goNext();
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+    });
+
+    expect(result.current.page).toBe(3);
+
+    const secondPageFetch = vi.mocked(fetch).mock.calls.length;
+
+    await act(async () => {
+      result.current.goPrevious();
+    });
+
+    expect(result.current.page).toBe(2);
+    expect(vi.mocked(fetch).mock.calls.length).toBe(secondPageFetch);
+  });
 });
