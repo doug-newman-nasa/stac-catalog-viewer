@@ -24,3 +24,12 @@ export interface StacItem {
   links?: StacLink[];
   [key: string]: unknown;
 }
+
+export interface StacItemCollection {
+  type: 'FeatureCollection';
+  features: StacItem[];
+  links: StacLink[];
+  numberMatched?: number;
+  numberReturned?: number;
+  [key: string]: unknown;
+}

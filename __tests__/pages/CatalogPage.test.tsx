@@ -8,7 +8,12 @@ vi.mock('../../src/hooks/useStacNode', () => ({
   useStacNode: vi.fn(),
 }));
 
+vi.mock('../../src/hooks/useStacItemsSearch', () => ({
+  useStacItemsSearch: vi.fn(),
+}));
+
 import { useStacNode } from '../../src/hooks/useStacNode';
+import { useStacItemsSearch } from '../../src/hooks/useStacItemsSearch';
 
 const mockCatalog: StacCatalog = {
   type: 'Catalog',
@@ -21,6 +26,20 @@ const mockCatalog: StacCatalog = {
     { rel: 'child', href: 'child2.json', title: 'Child 2' },
     { rel: 'item', href: 'item1.json', title: 'Item 1' },
   ],
+};
+
+const mockItemsSearchDefault = {
+  items: [],
+  loading: false,
+  error: null,
+  page: 1,
+  pageSize: 25,
+  setPageSize: vi.fn(),
+  hasNext: false,
+  hasPrevious: false,
+  goNext: vi.fn(),
+  goPrevious: vi.fn(),
+  retry: vi.fn(),
 };
 
 const renderWithRouter = (
@@ -42,6 +61,7 @@ const renderWithRouter = (
 describe('CatalogPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useStacItemsSearch).mockReturnValue(mockItemsSearchDefault);
   });
 
   it('should render loading state', () => {
@@ -1664,5 +1684,444 @@ describe('CatalogPage', () => {
 
     const prevButtons = screen.getAllByRole('button', { name: /previous/i });
     expect(prevButtons.length).toBe(2);
+  });
+
+  it('should render dynamic items section with rel:items link', () => {
+    const collection: StacCatalog = {
+      type: 'Collection',
+      stac_version: '1.0.0',
+      id: 'test-collection',
+      title: 'Test Collection',
+      description: 'A test collection',
+      links: [
+        { rel: 'items', href: 'items.json', title: 'Items' },
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: collection,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    const mockItem1 = {
+      type: 'Feature',
+      id: 'item1',
+      geometry: null,
+      properties: {},
+      links: [{ rel: 'self', href: 'https://example.com/item1' }],
+    };
+
+    const mockItem2 = {
+      type: 'Feature',
+      id: 'item2',
+      geometry: null,
+      properties: {},
+      links: [{ rel: 'self', href: 'https://example.com/item2' }],
+    };
+
+    vi.mocked(useStacItemsSearch).mockReturnValue({
+      items: [mockItem1, mockItem2],
+      loading: false,
+      error: null,
+      page: 1,
+      pageSize: 25,
+      setPageSize: vi.fn(),
+      hasNext: true,
+      hasPrevious: false,
+      numberMatched: 100,
+      goNext: vi.fn(),
+      goPrevious: vi.fn(),
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText('item1')).toBeInTheDocument();
+    expect(screen.getByText('item2')).toBeInTheDocument();
+  });
+
+  it('should show page info with numberMatched for dynamic items', () => {
+    const collection: StacCatalog = {
+      type: 'Collection',
+      stac_version: '1.0.0',
+      id: 'test-collection',
+      title: 'Test Collection',
+      description: 'A test collection',
+      links: [
+        { rel: 'items', href: 'items.json', title: 'Items' },
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: collection,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    vi.mocked(useStacItemsSearch).mockReturnValue({
+      items: [],
+      loading: false,
+      error: null,
+      page: 1,
+      pageSize: 25,
+      setPageSize: vi.fn(),
+      hasNext: true,
+      hasPrevious: false,
+      numberMatched: 2798490,
+      goNext: vi.fn(),
+      goPrevious: vi.fn(),
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const pageInfos = screen.getAllByText(/Page/);
+    expect(pageInfos.length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/of ~2798490 items/).length).toBeGreaterThan(0);
+  });
+
+  it('should navigate to next page for dynamic items', () => {
+    const collection: StacCatalog = {
+      type: 'Collection',
+      stac_version: '1.0.0',
+      id: 'test-collection',
+      title: 'Test Collection',
+      description: 'A test collection',
+      links: [
+        { rel: 'items', href: 'items.json', title: 'Items' },
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: collection,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    const mockGoNext = vi.fn();
+
+    vi.mocked(useStacItemsSearch).mockReturnValue({
+      items: [],
+      loading: false,
+      error: null,
+      page: 1,
+      pageSize: 25,
+      setPageSize: vi.fn(),
+      hasNext: true,
+      hasPrevious: false,
+      numberMatched: 100,
+      goNext: mockGoNext,
+      goPrevious: vi.fn(),
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    fireEvent.click(nextButtons[0]);
+
+    expect(mockGoNext).toHaveBeenCalled();
+  });
+
+  it('should navigate to previous page for dynamic items', () => {
+    const collection: StacCatalog = {
+      type: 'Collection',
+      stac_version: '1.0.0',
+      id: 'test-collection',
+      title: 'Test Collection',
+      description: 'A test collection',
+      links: [
+        { rel: 'items', href: 'items.json', title: 'Items' },
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: collection,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    const mockGoPrevious = vi.fn();
+
+    vi.mocked(useStacItemsSearch).mockReturnValue({
+      items: [],
+      loading: false,
+      error: null,
+      page: 2,
+      pageSize: 25,
+      setPageSize: vi.fn(),
+      hasNext: true,
+      hasPrevious: true,
+      numberMatched: 100,
+      goNext: vi.fn(),
+      goPrevious: mockGoPrevious,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const prevButtons = screen.getAllByRole('button', { name: /previous/i });
+    fireEvent.click(prevButtons[0]);
+
+    expect(mockGoPrevious).toHaveBeenCalled();
+  });
+
+  it('should disable next button when no more items for dynamic items', () => {
+    const collection: StacCatalog = {
+      type: 'Collection',
+      stac_version: '1.0.0',
+      id: 'test-collection',
+      title: 'Test Collection',
+      description: 'A test collection',
+      links: [
+        { rel: 'items', href: 'items.json', title: 'Items' },
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: collection,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    vi.mocked(useStacItemsSearch).mockReturnValue({
+      items: [],
+      loading: false,
+      error: null,
+      page: 2,
+      pageSize: 25,
+      setPageSize: vi.fn(),
+      hasNext: false,
+      hasPrevious: true,
+      numberMatched: 100,
+      goNext: vi.fn(),
+      goPrevious: vi.fn(),
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    expect(nextButtons[0]).toBeDisabled();
+  });
+
+  it('should disable previous button on first page for dynamic items', () => {
+    const collection: StacCatalog = {
+      type: 'Collection',
+      stac_version: '1.0.0',
+      id: 'test-collection',
+      title: 'Test Collection',
+      description: 'A test collection',
+      links: [
+        { rel: 'items', href: 'items.json', title: 'Items' },
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: collection,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    vi.mocked(useStacItemsSearch).mockReturnValue({
+      items: [],
+      loading: false,
+      error: null,
+      page: 1,
+      pageSize: 25,
+      setPageSize: vi.fn(),
+      hasNext: true,
+      hasPrevious: false,
+      numberMatched: 100,
+      goNext: vi.fn(),
+      goPrevious: vi.fn(),
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const prevButtons = screen.getAllByRole('button', { name: /previous/i });
+    expect(prevButtons[0]).toBeDisabled();
+  });
+
+  it('should show loading state for dynamic items', () => {
+    const collection: StacCatalog = {
+      type: 'Collection',
+      stac_version: '1.0.0',
+      id: 'test-collection',
+      title: 'Test Collection',
+      description: 'A test collection',
+      links: [
+        { rel: 'items', href: 'items.json', title: 'Items' },
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: collection,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    vi.mocked(useStacItemsSearch).mockReturnValue({
+      items: [],
+      loading: true,
+      error: null,
+      page: 1,
+      pageSize: 25,
+      setPageSize: vi.fn(),
+      hasNext: false,
+      hasPrevious: false,
+      goNext: vi.fn(),
+      goPrevious: vi.fn(),
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText(/Loading items/)).toBeInTheDocument();
+  });
+
+  it('should show error state for dynamic items', () => {
+    const collection: StacCatalog = {
+      type: 'Collection',
+      stac_version: '1.0.0',
+      id: 'test-collection',
+      title: 'Test Collection',
+      description: 'A test collection',
+      links: [
+        { rel: 'items', href: 'items.json', title: 'Items' },
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: collection,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    const mockRetry = vi.fn();
+
+    vi.mocked(useStacItemsSearch).mockReturnValue({
+      items: [],
+      loading: false,
+      error: new Error('Failed to fetch items'),
+      page: 1,
+      pageSize: 25,
+      setPageSize: vi.fn(),
+      hasNext: false,
+      hasPrevious: false,
+      goNext: vi.fn(),
+      goPrevious: vi.fn(),
+      retry: mockRetry,
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText('Failed to fetch items')).toBeInTheDocument();
+    const retryButton = screen.getByRole('button', { name: /retry/i });
+    fireEvent.click(retryButton);
+    expect(mockRetry).toHaveBeenCalled();
+  });
+
+  it('should change page size for dynamic items', () => {
+    const collection: StacCatalog = {
+      type: 'Collection',
+      stac_version: '1.0.0',
+      id: 'test-collection',
+      title: 'Test Collection',
+      description: 'A test collection',
+      links: [
+        { rel: 'items', href: 'items.json', title: 'Items' },
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: collection,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    const mockSetPageSize = vi.fn();
+
+    vi.mocked(useStacItemsSearch).mockReturnValue({
+      items: [],
+      loading: false,
+      error: null,
+      page: 1,
+      pageSize: 25,
+      setPageSize: mockSetPageSize,
+      hasNext: true,
+      hasPrevious: false,
+      numberMatched: 100,
+      goNext: vi.fn(),
+      goPrevious: vi.fn(),
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const selects = screen.getAllByRole('combobox');
+    const itemPageSizeSelect = selects[selects.length - 1] as HTMLSelectElement;
+    itemPageSizeSelect.value = '50';
+    fireEvent.change(itemPageSizeSelect);
+
+    expect(mockSetPageSize).toHaveBeenCalledWith(50);
+  });
+
+  it('should render both static items and dynamic items sections when both present', () => {
+    const catalogWithBoth: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      title: 'Test Catalog',
+      description: 'A test catalog',
+      links: [
+        { rel: 'item', href: 'item1.json', title: 'Static Item 1' },
+        { rel: 'items', href: 'items.json', title: 'Items' },
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithBoth,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    const mockItem = {
+      type: 'Feature',
+      id: 'dynamic-item1',
+      geometry: null,
+      properties: {},
+      links: [{ rel: 'self', href: 'https://example.com/item' }],
+    };
+
+    vi.mocked(useStacItemsSearch).mockReturnValue({
+      items: [mockItem],
+      loading: false,
+      error: null,
+      page: 1,
+      pageSize: 25,
+      setPageSize: vi.fn(),
+      hasNext: false,
+      hasPrevious: false,
+      goNext: vi.fn(),
+      goPrevious: vi.fn(),
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText('dynamic-item1')).toBeInTheDocument();
   });
 });
