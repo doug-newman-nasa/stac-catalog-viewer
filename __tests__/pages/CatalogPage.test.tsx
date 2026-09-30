@@ -365,4 +365,161 @@ describe('CatalogPage', () => {
 
     expect(mockClipboard.writeText).toHaveBeenCalledWith('https://example.com/catalog.json');
   });
+
+  it('should render page size selector for child catalogs', () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const selects = screen.getAllByRole('combobox');
+    expect(selects.length).toBeGreaterThan(0);
+  });
+
+  it('should show pagination controls when items exceed page size', () => {
+    const catalogWithManyChildren: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'large-catalog',
+      description: 'A catalog with many children',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'child',
+        href: `child${i}.json`,
+        title: `Child ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyChildren,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const pageInfo = screen.getByText(/page 1 of/i);
+    expect(pageInfo).toBeInTheDocument();
+  });
+
+  it('should change page when next button is clicked', () => {
+    const catalogWithManyChildren: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'large-catalog',
+      description: 'A catalog with many children',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'child',
+        href: `child${i}.json`,
+        title: `Child ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyChildren,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText('Child 1')).toBeInTheDocument();
+    expect(screen.getByText(/page 1 of/i)).toBeInTheDocument();
+
+    const nextButtons = screen.getAllByRole('button', { name: /next/i });
+    fireEvent.click(nextButtons[0]);
+
+    expect(screen.getByText(/page 2 of/i)).toBeInTheDocument();
+  });
+
+  it('should disable previous button on first page', () => {
+    const catalogWithManyChildren: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'large-catalog',
+      description: 'A catalog with many children',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'child',
+        href: `child${i}.json`,
+        title: `Child ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyChildren,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const prevButtons = screen.getAllByRole('button', { name: /previous/i });
+    expect(prevButtons[0]).toBeDisabled();
+  });
+
+  it('should change page size for child catalogs', () => {
+    const catalogWithManyChildren: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'large-catalog',
+      description: 'A catalog with many children',
+      links: Array.from({ length: 30 }, (_, i) => ({
+        rel: 'child',
+        href: `child${i}.json`,
+        title: `Child ${i + 1}`,
+      })),
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyChildren,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.getByText(/page 1 of 2/i)).toBeInTheDocument();
+
+    const selects = screen.getAllByRole('combobox');
+    const childPageSizeSelect = selects[0];
+    fireEvent.change(childPageSizeSelect, { target: { value: '50' } });
+
+    expect(screen.getByText('Child 30')).toBeInTheDocument();
+  });
+
+  it('should handle pagination for items independently from child catalogs', () => {
+    const catalogWithManyItems: StacCatalog = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'catalog-many-items',
+      description: 'A catalog with many items',
+      links: [
+        { rel: 'child', href: 'child1.json', title: 'Child 1' },
+        ...Array.from({ length: 30 }, (_, i) => ({
+          rel: 'item',
+          href: `item${i}.json`,
+          title: `Item ${i + 1}`,
+        })),
+      ],
+    };
+
+    vi.mocked(useStacNode).mockReturnValue({
+      data: catalogWithManyItems,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const pageInfos = screen.getAllByText(/page 1 of/i);
+    expect(pageInfos.length).toBeGreaterThan(0);
+  });
 });

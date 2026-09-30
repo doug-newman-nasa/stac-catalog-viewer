@@ -4,11 +4,17 @@ import { useStacNode } from '../hooks/useStacNode';
 import { getChildLinks, getItemLinks, resolveHref } from '../lib/stac';
 import '../styles/CatalogPage.css';
 
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+
 export function CatalogPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [showUrl, setShowUrl] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
+  const [childPageSize, setChildPageSize] = useState(25);
+  const [childCurrentPage, setChildCurrentPage] = useState(1);
+  const [itemPageSize, setItemPageSize] = useState(25);
+  const [itemCurrentPage, setItemCurrentPage] = useState(1);
   const url = searchParams.get('url');
 
   const { data, loading, error, retry } = useStacNode(url || '');
@@ -19,6 +25,16 @@ export function CatalogPage() {
       setUrlCopied(true);
       setTimeout(() => setUrlCopied(false), 2000);
     }
+  };
+
+  const getPaginatedData = <T,>(items: T[], page: number, pageSize: number) => {
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    return items.slice(start, end);
+  };
+
+  const getTotalPages = (itemCount: number, pageSize: number) => {
+    return Math.ceil(itemCount / pageSize);
   };
 
   if (!url) {
@@ -126,9 +142,31 @@ export function CatalogPage() {
 
       {childLinks.length > 0 && (
         <div className="section">
-          <h3 className="section-title">Child Catalogs</h3>
+          <div className="section-header">
+            <h3 className="section-title">Child Catalogs</h3>
+            <div className="section-controls">
+              <label className="page-size-label">
+                Per page:
+                <select
+                  value={childPageSize}
+                  onChange={(e) => {
+                    setChildPageSize(Number(e.target.value));
+                    setChildCurrentPage(1);
+                  }}
+                  className="page-size-select"
+                >
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
           <div className="child-list">
-            {childLinks.map((link) => {
+            {getPaginatedData(childLinks, childCurrentPage, childPageSize).map((link) => {
               const childUrl = resolveHref(url, link.href);
               return (
                 <Link
@@ -145,14 +183,62 @@ export function CatalogPage() {
               );
             })}
           </div>
+
+          {getTotalPages(childLinks.length, childPageSize) > 1 && (
+            <div className="pagination">
+              <span className="page-info">
+                Page {childCurrentPage} of {getTotalPages(childLinks.length, childPageSize)}
+              </span>
+              <div className="pagination-controls">
+                <button
+                  onClick={() => setChildCurrentPage(Math.max(1, childCurrentPage - 1))}
+                  disabled={childCurrentPage === 1}
+                  className="pagination-button"
+                >
+                  ← Previous
+                </button>
+                <button
+                  onClick={() =>
+                    setChildCurrentPage(Math.min(getTotalPages(childLinks.length, childPageSize), childCurrentPage + 1))
+                  }
+                  disabled={childCurrentPage === getTotalPages(childLinks.length, childPageSize)}
+                  className="pagination-button"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {itemLinks.length > 0 && (
         <div className="section">
-          <h3 className="section-title">Items</h3>
+          <div className="section-header">
+            <h3 className="section-title">Items</h3>
+            <div className="section-controls">
+              <label className="page-size-label">
+                Per page:
+                <select
+                  value={itemPageSize}
+                  onChange={(e) => {
+                    setItemPageSize(Number(e.target.value));
+                    setItemCurrentPage(1);
+                  }}
+                  className="page-size-select"
+                >
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
           <div className="item-list">
-            {itemLinks.map((link) => {
+            {getPaginatedData(itemLinks, itemCurrentPage, itemPageSize).map((link) => {
               const itemUrl = resolveHref(url, link.href);
               return (
                 <a
@@ -168,6 +254,32 @@ export function CatalogPage() {
               );
             })}
           </div>
+
+          {getTotalPages(itemLinks.length, itemPageSize) > 1 && (
+            <div className="pagination">
+              <span className="page-info">
+                Page {itemCurrentPage} of {getTotalPages(itemLinks.length, itemPageSize)}
+              </span>
+              <div className="pagination-controls">
+                <button
+                  onClick={() => setItemCurrentPage(Math.max(1, itemCurrentPage - 1))}
+                  disabled={itemCurrentPage === 1}
+                  className="pagination-button"
+                >
+                  ← Previous
+                </button>
+                <button
+                  onClick={() =>
+                    setItemCurrentPage(Math.min(getTotalPages(itemLinks.length, itemPageSize), itemCurrentPage + 1))
+                  }
+                  disabled={itemCurrentPage === getTotalPages(itemLinks.length, itemPageSize)}
+                  className="pagination-button"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
