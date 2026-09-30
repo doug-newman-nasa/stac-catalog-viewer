@@ -3,6 +3,7 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useStacNode } from '../hooks/useStacNode';
 import { useStacItemsSearch } from '../hooks/useStacItemsSearch';
 import { getChildLinks, getItemLinks, getItemsLink, resolveHref } from '../lib/stac';
+import { ExtentDisplay } from '../components/ExtentDisplay';
 import '../styles/CatalogPage.css';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -143,6 +144,7 @@ export function CatalogPage() {
             )}
           </div>
         </div>
+        {data.extent && <ExtentDisplay extent={data.extent} />}
       </div>
 
       {childLinks.length > 0 && (
