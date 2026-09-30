@@ -261,4 +261,108 @@ describe('CatalogPage', () => {
 
     expect(screen.queryByText(/catalog/i)).not.toBeInTheDocument();
   });
+
+  it('should render URL toggle button', () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const toggleButton = screen.getByRole('button', { name: /show url/i });
+    expect(toggleButton).toBeInTheDocument();
+  });
+
+  it('should hide URL by default', () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    expect(screen.queryByText(/catalog url:/i)).not.toBeInTheDocument();
+  });
+
+  it('should show URL when toggle button is clicked', () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const toggleButton = screen.getByRole('button', { name: /show url/i });
+    fireEvent.click(toggleButton);
+
+    expect(screen.getByText(/catalog url:/i)).toBeInTheDocument();
+    expect(screen.getByText('https://example.com/catalog.json')).toBeInTheDocument();
+  });
+
+  it('should toggle URL visibility', () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const toggleButton = screen.getByRole('button', { name: /show url/i });
+
+    fireEvent.click(toggleButton);
+    expect(screen.getByText(/catalog url:/i)).toBeInTheDocument();
+
+    const hideButton = screen.getByRole('button', { name: /hide url/i });
+    fireEvent.click(hideButton);
+    expect(screen.queryByText(/catalog url:/i)).not.toBeInTheDocument();
+  });
+
+  it('should render copy button when URL is shown', () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    renderWithRouter();
+
+    const toggleButton = screen.getByRole('button', { name: /show url/i });
+    fireEvent.click(toggleButton);
+
+    expect(screen.getByRole('button', { name: /copy/i })).toBeInTheDocument();
+  });
+
+  it('should copy URL to clipboard when copy button is clicked', async () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    const mockClipboard = {
+      writeText: vi.fn().mockResolvedValue(undefined),
+    };
+    Object.assign(navigator, { clipboard: mockClipboard });
+
+    renderWithRouter();
+
+    const toggleButton = screen.getByRole('button', { name: /show url/i });
+    fireEvent.click(toggleButton);
+
+    const copyButton = screen.getByRole('button', { name: /copy/i });
+    fireEvent.click(copyButton);
+
+    expect(mockClipboard.writeText).toHaveBeenCalledWith('https://example.com/catalog.json');
+  });
 });
