@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useStacNode } from '../hooks/useStacNode';
 import { getChildLinks, getItemLinks, resolveHref } from '../lib/stac';
@@ -6,9 +7,19 @@ import '../styles/CatalogPage.css';
 export function CatalogPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [showUrl, setShowUrl] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
   const url = searchParams.get('url');
 
   const { data, loading, error, retry } = useStacNode(url || '');
+
+  const copyUrlToClipboard = () => {
+    if (url) {
+      navigator.clipboard.writeText(url);
+      setUrlCopied(true);
+      setTimeout(() => setUrlCopied(false), 2000);
+    }
+  };
 
   if (!url) {
     return (
@@ -54,9 +65,34 @@ export function CatalogPage() {
 
   return (
     <div className="catalog-page">
-      <button onClick={() => navigate(-1)} className="back-button-header">
-        ← Back
-      </button>
+      <div className="page-header">
+        <button onClick={() => navigate(-1)} className="back-button-header">
+          ← Back
+        </button>
+        <button
+          onClick={() => setShowUrl(!showUrl)}
+          className="url-toggle-button"
+          title={showUrl ? 'Hide URL' : 'Show URL'}
+        >
+          {showUrl ? '🔗 Hide URL' : '🔗 Show URL'}
+        </button>
+      </div>
+
+      {showUrl && (
+        <div className="url-display">
+          <div className="url-content">
+            <span className="url-label">Catalog URL:</span>
+            <code className="url-value">{url}</code>
+            <button
+              onClick={copyUrlToClipboard}
+              className="copy-button"
+              title="Copy URL to clipboard"
+            >
+              {urlCopied ? '✓ Copied!' : 'Copy'}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="catalog-card">
         <div className="catalog-header">
