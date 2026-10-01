@@ -7,6 +7,9 @@ import { ExtentDisplay } from '../components/ExtentDisplay';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
 import { KeywordsDisplay } from '../components/KeywordsDisplay';
 import { CollectionSearch } from '../components/CollectionSearch';
+import { searchCollections } from '../lib/collectionSearch';
+import type { CollectionSearchParams } from '../lib/collectionSearch';
+import type { StacCatalog } from '../types/stac';
 import '../styles/CatalogPage.css';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -20,6 +23,14 @@ export function CatalogPage() {
   const [childCurrentPage, setChildCurrentPage] = useState(1);
   const [itemPageSize, setItemPageSize] = useState(25);
   const [itemCurrentPage, setItemCurrentPage] = useState(1);
+
+  // Collection search state
+  const [collectionSearchParams, setCollectionSearchParams] = useState<CollectionSearchParams>({ limit: 25 });
+  const [collectionSearchResults, setCollectionSearchResults] = useState<StacCatalog[]>([]);
+  const [collectionSearchLoading, setCollectionSearchLoading] = useState(false);
+  const [collectionSearchError, setCollectionSearchError] = useState<Error | null>(null);
+  const [collectionSearchPage, setCollectionSearchPage] = useState(1);
+
   const url = searchParams.get('url');
 
   const { data, loading, error, retry } = useStacNode(url || '');
@@ -42,6 +53,31 @@ export function CatalogPage() {
       const collectionUrl = selfLink ? resolveHref(url, selfLink.href) : `${url}/${collection.id}`;
       navigate(`/catalog?url=${encodeURIComponent(collectionUrl)}`);
     }
+  };
+
+  const handleCollectionSearch = async (params: CollectionSearchParams) => {
+    if (!url) return;
+
+    setCollectionSearchLoading(true);
+    setCollectionSearchError(null);
+    setCollectionSearchPage(1);
+
+    try {
+      const result = await searchCollections(url, params);
+      setCollectionSearchResults(result.collections);
+    } catch (err) {
+      setCollectionSearchError(err instanceof Error ? err : new Error(String(err)));
+      setCollectionSearchResults([]);
+    } finally {
+      setCollectionSearchLoading(false);
+    }
+  };
+
+  const handleCollectionSearchClear = () => {
+    setCollectionSearchParams({ limit: 25 });
+    setCollectionSearchResults([]);
+    setCollectionSearchError(null);
+    setCollectionSearchPage(1);
   };
 
   const getPaginatedData = <T,>(items: T[], page: number, pageSize: number) => {
@@ -172,9 +208,125 @@ export function CatalogPage() {
         {keywords.length > 0 && <KeywordsDisplay keywords={keywords} />}
       </div>
 
-      <CollectionSearch baseUrl={url} onCollectionSelect={handleCollectionSelect} />
+      <CollectionSearch
+        searchParams={collectionSearchParams}
+        onSearchParamsChange={setCollectionSearchParams}
+        onSearch={handleCollectionSearch}
+        onClearSearch={handleCollectionSearchClear}
+        loading={collectionSearchLoading}
+        error={collectionSearchError}
+      />
 
-      {childLinks.length > 0 && (
+      {(collectionSearchResults.length > 0 || collectionSearchLoading) && (
+        <div className="section">
+          <div className="section-header">
+            <h3 className="section-title">Search Results</h3>
+            <div className="section-controls">
+              <label className="page-size-label">
+                Per page:
+                <select
+                  value={childPageSize}
+                  onChange={(e) => {
+                    setChildPageSize(Number(e.target.value));
+                    setCollectionSearchPage(1);
+                  }}
+                  className="page-size-select"
+                >
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
+          {collectionSearchLoading && (
+            <div className="search-loading">
+              <span className="spinner">⏳</span> Searching collections...
+            </div>
+          )}
+
+          {!collectionSearchLoading && collectionSearchResults.length > 0 && (
+            <>
+              {getTotalPages(collectionSearchResults.length, childPageSize) > 1 && (
+                <div className="pagination pagination-top">
+                  <span className="page-info">
+                    Page {collectionSearchPage} of {getTotalPages(collectionSearchResults.length, childPageSize)}
+                  </span>
+                  <div className="pagination-controls">
+                    <button
+                      onClick={() => setCollectionSearchPage(Math.max(1, collectionSearchPage - 1))}
+                      disabled={collectionSearchPage === 1}
+                      className="pagination-button"
+                    >
+                      ← Previous
+                    </button>
+                    <button
+                      onClick={() =>
+                        setCollectionSearchPage(
+                          Math.min(getTotalPages(collectionSearchResults.length, childPageSize), collectionSearchPage + 1)
+                        )
+                      }
+                      disabled={collectionSearchPage === getTotalPages(collectionSearchResults.length, childPageSize)}
+                      className="pagination-button"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="child-list">
+                {getPaginatedData(collectionSearchResults, collectionSearchPage, childPageSize).map((collection) => (
+                  <div
+                    key={collection.id}
+                    onClick={() => handleCollectionSelect(collection)}
+                    className="child-link"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="child-link-content">
+                      <span className="child-link-title">{collection.title || collection.id}</span>
+                    </div>
+                    <span className="child-link-arrow">→</span>
+                  </div>
+                ))}
+              </div>
+
+              {getTotalPages(collectionSearchResults.length, childPageSize) > 1 && (
+                <div className="pagination">
+                  <span className="page-info">
+                    Page {collectionSearchPage} of {getTotalPages(collectionSearchResults.length, childPageSize)}
+                  </span>
+                  <div className="pagination-controls">
+                    <button
+                      onClick={() => setCollectionSearchPage(Math.max(1, collectionSearchPage - 1))}
+                      disabled={collectionSearchPage === 1}
+                      className="pagination-button"
+                    >
+                      ← Previous
+                    </button>
+                    <button
+                      onClick={() =>
+                        setCollectionSearchPage(
+                          Math.min(getTotalPages(collectionSearchResults.length, childPageSize), collectionSearchPage + 1)
+                        )
+                      }
+                      disabled={collectionSearchPage === getTotalPages(collectionSearchResults.length, childPageSize)}
+                      className="pagination-button"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {collectionSearchResults.length === 0 && childLinks.length > 0 && (
         <div className="section">
           <div className="section-header">
             <h3 className="section-title">Child Catalogs</h3>
