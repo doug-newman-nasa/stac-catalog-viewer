@@ -304,4 +304,173 @@ describe('StorageDisplay', () => {
     expect(screen.queryByText('nullProperty')).not.toBeInTheDocument();
     expect(screen.queryByText('undefinedProperty')).not.toBeInTheDocument();
   });
+
+  it('should render nothing when only empty storage:schemes property exists', () => {
+    const catalog: any = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      description: 'Test catalog',
+      links: [],
+      'storage:schemes': {},
+    };
+
+    const { container } = render(<StorageDisplay catalog={catalog} />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('should display storage:schemes information when present', async () => {
+    const user = userEvent.setup();
+    const catalog: any = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      description: 'Test catalog',
+      links: [],
+      'storage:schemes': {
+        aws: {
+          type: 'aws-s3',
+          platform: 'https://{bucket}.s3.{region}.amazonaws.com',
+          bucket: 'prod-lads',
+          region: 'us-west-2',
+        },
+      },
+    };
+
+    render(<StorageDisplay catalog={catalog} />);
+
+    const toggle = screen.getByRole('button');
+    await user.click(toggle);
+
+    expect(screen.getByText('aws')).toBeInTheDocument();
+    expect(screen.getByText('aws-s3')).toBeInTheDocument();
+    expect(screen.getByText('prod-lads')).toBeInTheDocument();
+    expect(screen.getByText('us-west-2')).toBeInTheDocument();
+  });
+
+  it('should display multiple storage schemes', async () => {
+    const user = userEvent.setup();
+    const catalog: any = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      description: 'Test catalog',
+      links: [],
+      'storage:schemes': {
+        aws: {
+          type: 'aws-s3',
+          bucket: 'prod-data',
+          region: 'us-west-2',
+        },
+        azure: {
+          type: 'azure-blob',
+          bucket: 'prod-data-azure',
+          endpoint: 'https://myaccount.blob.core.windows.net',
+        },
+      },
+    };
+
+    render(<StorageDisplay catalog={catalog} />);
+
+    const toggle = screen.getByRole('button');
+    await user.click(toggle);
+
+    expect(screen.getByText('aws')).toBeInTheDocument();
+    expect(screen.getByText('azure')).toBeInTheDocument();
+    expect(screen.getByText('aws-s3')).toBeInTheDocument();
+    expect(screen.getByText('azure-blob')).toBeInTheDocument();
+    expect(screen.getByText('prod-data')).toBeInTheDocument();
+    expect(screen.getByText('prod-data-azure')).toBeInTheDocument();
+  });
+
+  it('should display storage:schemes with all possible properties', async () => {
+    const user = userEvent.setup();
+    const catalog: any = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      description: 'Test catalog',
+      links: [],
+      'storage:schemes': {
+        aws: {
+          type: 'aws-s3',
+          platform: 'https://{bucket}.s3.{region}.amazonaws.com',
+          bucket: 'data-bucket',
+          region: 'us-east-1',
+          endpoint: 'https://s3.us-east-1.amazonaws.com',
+        },
+      },
+    };
+
+    render(<StorageDisplay catalog={catalog} />);
+
+    const toggle = screen.getByRole('button');
+    await user.click(toggle);
+
+    expect(screen.getByText('Type:')).toBeInTheDocument();
+    expect(screen.getByText('aws-s3')).toBeInTheDocument();
+    expect(screen.getByText('Platform:')).toBeInTheDocument();
+    expect(screen.getByText('Bucket:')).toBeInTheDocument();
+    expect(screen.getByText('data-bucket')).toBeInTheDocument();
+    expect(screen.getByText('Region:')).toBeInTheDocument();
+    expect(screen.getByText('us-east-1')).toBeInTheDocument();
+    expect(screen.getByText('Endpoint:')).toBeInTheDocument();
+    expect(screen.getByText('https://s3.us-east-1.amazonaws.com')).toBeInTheDocument();
+  });
+
+  it('should handle both storage and storage:schemes properties', async () => {
+    const user = userEvent.setup();
+    const catalog: any = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      description: 'Test catalog',
+      links: [],
+      storage: {
+        platform: 'S3',
+      },
+      'storage:schemes': {
+        aws: {
+          type: 'aws-s3',
+          bucket: 'data-bucket',
+        },
+      },
+    };
+
+    render(<StorageDisplay catalog={catalog} />);
+
+    const toggle = screen.getByRole('button');
+    await user.click(toggle);
+
+    expect(screen.getByText('Platform:')).toBeInTheDocument();
+    expect(screen.getByText('S3')).toBeInTheDocument();
+    expect(screen.getByText('aws')).toBeInTheDocument();
+    expect(screen.getByText('data-bucket')).toBeInTheDocument();
+  });
+
+  it('should display custom properties in storage:schemes', async () => {
+    const user = userEvent.setup();
+    const catalog: any = {
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'test-catalog',
+      description: 'Test catalog',
+      links: [],
+      'storage:schemes': {
+        aws: {
+          type: 'aws-s3',
+          bucket: 'data-bucket',
+          customProperty: 'custom-value',
+        },
+      },
+    };
+
+    render(<StorageDisplay catalog={catalog} />);
+
+    const toggle = screen.getByRole('button');
+    await user.click(toggle);
+
+    expect(screen.getByText('customProperty:')).toBeInTheDocument();
+    expect(screen.getByText('custom-value')).toBeInTheDocument();
+  });
 });

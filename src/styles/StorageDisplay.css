@@ -90,3 +90,33 @@
   color: #10b981;
   font-weight: 500;
 }
+
+.storage-schemes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.storage-scheme {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.storage-scheme-name {
+  padding: 8px 12px;
+  background: #f0f0f0;
+  font-weight: 600;
+  color: #333;
+  font-size: 13px;
+  border-bottom: 1px solid #e0e0e0;
+  text-transform: capitalize;
+}
+
+.storage-scheme-details {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
