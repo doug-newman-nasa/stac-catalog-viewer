@@ -77,7 +77,13 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink }: Collect
             </div>
           )}
 
-          {!itemsSearch.loading && !itemsSearch.error && (
+          {!itemsSearch.loading && !itemsSearch.error && itemsSearch.items.length === 0 && !itemsSearch.numberMatched && (
+            <div className="item-search-no-results">
+              <p className="no-results-message">No items found</p>
+            </div>
+          )}
+
+          {!itemsSearch.loading && !itemsSearch.error && (itemsSearch.items.length > 0 || itemsSearch.numberMatched) && (
             <>
               <div className="pagination pagination-top">
                 <span className="page-info">
