@@ -1,4 +1,11 @@
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+const LOG_LEVEL_ORDER: Record<LogLevel, number> = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+};
 
 interface LogEntry {
   timestamp: string;
@@ -28,9 +35,25 @@ interface ErrorLog extends LogEntry {
 
 type AnyLog = LogEntry | RequestLog | ResponseLog | ErrorLog;
 
+export interface LoggerConfig {
+  minLogLevel: LogLevel;
+  persistToDisk: boolean;
+  maxLogsInMemory: number;
+  maxLogsOnDisk: number;
+}
+
 class Logger {
   private logs: AnyLog[] = [];
-  private maxLogs = 500;
+  private config: LoggerConfig = {
+    minLogLevel: 'info',
+    persistToDisk: true,
+    maxLogsInMemory: 500,
+    maxLogsOnDisk: 5000,
+  };
+  private db: IDBDatabase | null = null;
+  private readonly DB_NAME = 'STACCatalogViewerLogs';
+  private readonly STORE_NAME = 'logs';
+  private readonly CONFIG_STORE_NAME = 'config';
 
   private formatLog(entry: AnyLog): string {
     const { timestamp, level, message } = entry;
@@ -159,15 +182,181 @@ class Logger {
   }
 
   private addLog(entry: AnyLog): void {
+    if (!this.shouldLog(entry.level)) {
+      return;
+    }
+
     this.logs.push(entry);
-    if (this.logs.length > this.maxLogs) {
+    if (this.logs.length > this.config.maxLogsInMemory) {
       this.logs.shift();
     }
+
+    if (this.config.persistToDisk) {
+      this.persistLogToDisk(entry);
+    }
+  }
+
+  private shouldLog(level: LogLevel): boolean {
+    return LOG_LEVEL_ORDER[level] >= LOG_LEVEL_ORDER[this.config.minLogLevel];
   }
 
   private getTimestamp(): string {
     return new Date().toISOString();
   }
+
+  async initializeDB(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.DB_NAME, 1);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        this.db = request.result;
+        this.loadConfig();
+        resolve();
+      };
+
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+          const store = db.createObjectStore(this.STORE_NAME, { keyPath: 'id', autoIncrement: true });
+          store.createIndex('timestamp', 'timestamp', { unique: false });
+          store.createIndex('level', 'level', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(this.CONFIG_STORE_NAME)) {
+          db.createObjectStore(this.CONFIG_STORE_NAME, { keyPath: 'key' });
+        }
+      };
+    });
+  }
+
+  private persistLogToDisk(entry: AnyLog): void {
+    if (!this.db) return;
+
+    const transaction = this.db.transaction([this.STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(this.STORE_NAME);
+
+    store.add({
+      ...entry,
+      id: undefined,
+    });
+
+    this.enforceMaxLogsOnDisk();
+  }
+
+  private enforceMaxLogsOnDisk(): void {
+    if (!this.db) return;
+
+    const transaction = this.db.transaction([this.STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(this.STORE_NAME);
+    const countRequest = store.count();
+
+    countRequest.onsuccess = () => {
+      if (countRequest.result > this.config.maxLogsOnDisk) {
+        const range = IDBKeyRange.upperBound(
+          countRequest.result - this.config.maxLogsOnDisk
+        );
+        store.delete(range);
+      }
+    };
+  }
+
+  private loadConfig(): void {
+    if (!this.db) return;
+
+    const transaction = this.db.transaction([this.CONFIG_STORE_NAME], 'readonly');
+    const store = transaction.objectStore(this.CONFIG_STORE_NAME);
+    const request = store.get('config');
+
+    request.onsuccess = () => {
+      if (request.result) {
+        this.config = { ...this.config, ...request.result.value };
+      }
+    };
+  }
+
+  private saveConfig(): void {
+    if (!this.db) return;
+
+    const transaction = this.db.transaction([this.CONFIG_STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(this.CONFIG_STORE_NAME);
+    store.put({ key: 'config', value: this.config });
+  }
+
+  setConfig(config: Partial<LoggerConfig>): void {
+    this.config = { ...this.config, ...config };
+    this.saveConfig();
+  }
+
+  getConfig(): LoggerConfig {
+    return { ...this.config };
+  }
+
+  setLogLevel(level: LogLevel): void {
+    this.setConfig({ minLogLevel: level });
+  }
+
+  async getLogsFromDisk(limit?: number): Promise<AnyLog[]> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        resolve([]);
+        return;
+      }
+
+      const transaction = this.db.transaction([this.STORE_NAME], 'readonly');
+      const store = transaction.objectStore(this.STORE_NAME);
+      const index = store.index('timestamp');
+      const range = IDBKeyRange.lowerBound(0);
+      const request = index.getAll(range, limit);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const logs = request.result as AnyLog[];
+        resolve(logs.sort((a, b) => a.timestamp.localeCompare(b.timestamp)));
+      };
+    });
+  }
+
+  async clearDiskLogs(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        resolve();
+        return;
+      }
+
+      const transaction = this.db.transaction([this.STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(this.STORE_NAME);
+      const request = store.clear();
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve();
+    });
+  }
+
+  async exportLogsFromDisk(): Promise<string> {
+    const diskLogs = await this.getLogsFromDisk();
+    return diskLogs.map(log => this.formatLog(log)).join('\n');
+  }
+
+  downloadLogsWithDiskLogs(): void {
+    this.exportLogsFromDisk().then((diskContent) => {
+      const memoryContent = this.logs.map(log => this.formatLog(log)).join('\n');
+      const allContent = diskContent ? `${diskContent}\n${memoryContent}` : memoryContent;
+      const blob = new Blob([allContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `stac-catalog-viewer-logs-${new Date().toISOString()}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    });
+  }
 }
 
 export const logger = new Logger();
+
+// Initialize the database when the module loads
+logger.initializeDB().catch(err => {
+  console.warn('Failed to initialize log database:', err);
+});

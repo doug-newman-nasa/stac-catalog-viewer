@@ -273,9 +273,97 @@
   color: #a0aec0;
 }
 
+.log-panel-settings {
+  padding: 12px;
+  border-bottom: 1px solid #4a5568;
+  background-color: #2d3748;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.settings-section {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-section label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #cbd5e0;
+  font-size: 12px;
+  flex: 1;
+}
+
+.settings-section input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.settings-section select,
+.settings-section input[type='number'] {
+  padding: 4px 8px;
+  background-color: #1a202c;
+  color: #cbd5e0;
+  border: 1px solid #4a5568;
+  border-radius: 2px;
+  font-size: 11px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.settings-section select:focus,
+.settings-section input[type='number']:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.1);
+}
+
+.settings-section span {
+  min-width: 150px;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.danger-button {
+  padding: 4px 8px;
+  background-color: #f56565;
+  color: #fff;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+
+.danger-button:hover {
+  background-color: #e53e3e;
+}
+
 @media (max-width: 768px) {
   .log-panel-content {
     width: calc(100vw - 40px);
     max-height: 300px;
+  }
+
+  .settings-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .settings-section span {
+    min-width: unset;
+  }
+
+  .settings-section select,
+  .settings-section input[type='number'] {
+    width: 100%;
   }
 }
