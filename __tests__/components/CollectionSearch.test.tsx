@@ -317,4 +317,125 @@ describe('CollectionSearch Component', () => {
     const clearButton = screen.getByRole('button', { name: /Clear Results/i });
     expect(clearButton).toBeDisabled();
   });
+
+  it('should clear bbox when input is emptied', async () => {
+    const user = userEvent.setup();
+    const searchParams: CollectionSearchParams = { bbox: [-10, -10, 10, 10], limit: 25 };
+
+    render(
+      <CollectionSearch
+        searchParams={searchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    await user.click(advancedToggle);
+
+    const bboxInput = screen.getByPlaceholderText(/-180, -90, 180, 90/i) as HTMLInputElement;
+    fireEvent.change(bboxInput, { target: { value: '' } });
+
+    expect(mockOnSearchParamsChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bbox: undefined,
+      })
+    );
+  });
+
+  it('should clear datetime when input is emptied', async () => {
+    const user = userEvent.setup();
+    const searchParams: CollectionSearchParams = { datetime: '2020-01-01/2023-12-31', limit: 25 };
+
+    render(
+      <CollectionSearch
+        searchParams={searchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    await user.click(advancedToggle);
+
+    const datetimeInput = screen.getByPlaceholderText(/2020-01-01\/2023-12-31/i) as HTMLInputElement;
+    fireEvent.change(datetimeInput, { target: { value: '' } });
+
+    expect(mockOnSearchParamsChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        datetime: undefined,
+      })
+    );
+  });
+
+  it('should not update bbox when input has invalid format', () => {
+    render(
+      <CollectionSearch
+        searchParams={{ limit: 25 }}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    fireEvent.click(advancedToggle);
+
+    const bboxInput = screen.getByPlaceholderText(/-180, -90, 180, 90/i) as HTMLInputElement;
+    fireEvent.change(bboxInput, { target: { value: 'invalid,bbox,format' } });
+
+    // Should not call onSearchParamsChange since format is invalid
+    const callsWithBbox = mockOnSearchParamsChange.mock.calls.filter(call =>
+      call[0].bbox !== undefined
+    );
+    expect(callsWithBbox).toHaveLength(0);
+  });
+
+  it('should not update bbox when input has less than 4 coordinates', () => {
+    render(
+      <CollectionSearch
+        searchParams={{ limit: 25 }}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    fireEvent.click(advancedToggle);
+
+    const bboxInput = screen.getByPlaceholderText(/-180, -90, 180, 90/i) as HTMLInputElement;
+    fireEvent.change(bboxInput, { target: { value: '-10, -10, 10' } });
+
+    // Should not call onSearchParamsChange with bbox since it doesn't have 4 values
+    const callsWithBbox = mockOnSearchParamsChange.mock.calls.filter(call =>
+      call[0].bbox !== undefined
+    );
+    expect(callsWithBbox).toHaveLength(0);
+  });
+
+  it('should update bbox with valid coordinates with extra whitespace', () => {
+    render(
+      <CollectionSearch
+        searchParams={{ limit: 25 }}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    fireEvent.click(advancedToggle);
+
+    const bboxInput = screen.getByPlaceholderText(/-180, -90, 180, 90/i) as HTMLInputElement;
+    fireEvent.change(bboxInput, { target: { value: ' -10 , -10 , 10 , 10 ' } });
+
+    expect(mockOnSearchParamsChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bbox: [-10, -10, 10, 10],
+      })
+    );
+  });
 });

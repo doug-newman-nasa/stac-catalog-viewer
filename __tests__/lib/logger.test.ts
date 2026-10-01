@@ -803,4 +803,262 @@ describe('Logger', () => {
       expect(typeof formatted).toBe('string');
     });
   });
+
+  describe('disk operations with logs', () => {
+    it('should handle getLogsFromDisk when db is null', async () => {
+      const originalDb = (logger as any).db;
+      (logger as any).db = null;
+
+      const diskLogs = await logger.getLogsFromDisk();
+      expect(diskLogs).toEqual([]);
+
+      (logger as any).db = originalDb;
+    });
+
+    it('should handle clearDiskLogs when db is null', async () => {
+      const originalDb = (logger as any).db;
+      (logger as any).db = null;
+
+      await logger.clearDiskLogs();
+
+      (logger as any).db = originalDb;
+    });
+
+    it('should save config correctly', () => {
+      logger.setConfig({ minLogLevel: 'debug' });
+      const config = logger.getConfig();
+
+      expect(config.minLogLevel).toBe('debug');
+    });
+
+    it('should persist logs when config.persistToDisk is true', () => {
+      logger.setConfig({ persistToDisk: true });
+      logger.logInfo('Persisted log');
+
+      const logs = logger.getLogs();
+      expect(logs.length).toBeGreaterThan(0);
+      expect(logs[logs.length - 1].message).toBe('Persisted log');
+    });
+
+    it('should handle shouldLog correctly for different levels', () => {
+      const shouldLogMethod = (logger as any).shouldLog.bind(logger);
+
+      logger.setLogLevel('warn');
+      expect(shouldLogMethod('debug')).toBe(false);
+      expect(shouldLogMethod('info')).toBe(false);
+      expect(shouldLogMethod('warn')).toBe(true);
+      expect(shouldLogMethod('error')).toBe(true);
+    });
+
+    it('should handle getTimestamp format', () => {
+      const timestampMethod = (logger as any).getTimestamp.bind(logger);
+      const timestamp = timestampMethod();
+
+      expect(timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    });
+
+    it('should correctly format different log types', () => {
+      const formatLogMethod = (logger as any).formatLog.bind(logger);
+
+      const requestLog: any = {
+        timestamp: '2024-01-01T12:00:00Z',
+        level: 'info',
+        message: 'Test Request',
+        type: 'request',
+        method: 'GET',
+        url: 'https://example.com',
+      };
+
+      const formatted = formatLogMethod(requestLog);
+      expect(formatted).toContain('Test Request');
+      expect(formatted).toContain('GET');
+      expect(formatted).toContain('https://example.com');
+    });
+
+    it('should handle response log format with duration', () => {
+      logger.logResponse('https://example.com', 200, 123);
+      const logs = logger.getLogs();
+
+      expect(logs[logs.length - 1]).toMatchObject({
+        type: 'response',
+        status: 200,
+        duration: 123,
+      });
+    });
+
+    it('should handle error log with stack trace', () => {
+      const error = new Error('Test error with stack');
+      logger.logError('Operation failed', error);
+
+      const logs = logger.getLogs();
+      const errorLog = logs[logs.length - 1];
+
+      expect(errorLog.type).toBe('error');
+      expect(errorLog).toHaveProperty('stack');
+    });
+
+    it('should process write queue when logs are added', () => {
+      logger.setConfig({ persistToDisk: true });
+
+      for (let i = 0; i < 15; i++) {
+        logger.logInfo(`Message ${i}`);
+      }
+
+      const logs = logger.getLogs();
+      expect(logs.length).toBeGreaterThan(0);
+    });
+
+    it('should handle request log data parameter', () => {
+      const data = { query: 'test', param: 123 };
+      logger.logRequest('POST', 'https://api.example.com', data);
+
+      const logs = logger.getLogs();
+      const requestLog = logs[logs.length - 1];
+
+      expect(requestLog.data).toEqual(data);
+    });
+
+    it('should handle response log data parameter', () => {
+      const data = { count: 42, cached: true };
+      logger.logResponse('https://api.example.com', 200, 50, data);
+
+      const logs = logger.getLogs();
+      const responseLog = logs[logs.length - 1];
+
+      expect(responseLog.data).toEqual(data);
+    });
+
+    it('should format request log correctly in console', () => {
+      const consoleSpy = vi.spyOn(console, 'log');
+      logger.logRequest('DELETE', 'https://api.example.com/resource/123');
+
+      expect(consoleSpy).toHaveBeenCalled();
+      const call = consoleSpy.mock.calls[consoleSpy.mock.calls.length - 1][0];
+      expect(call).toContain('DELETE');
+      expect(call).toContain('https://api.example.com/resource/123');
+    });
+
+    it('should format response log correctly in console', () => {
+      const consoleSpy = vi.spyOn(console, 'log');
+      logger.logResponse('https://api.example.com', 201, 75);
+
+      expect(consoleSpy).toHaveBeenCalled();
+      const call = consoleSpy.mock.calls[consoleSpy.mock.calls.length - 1][0];
+      expect(call).toContain('201');
+      expect(call).toContain('75ms');
+    });
+
+    it('should format error log with stack trace in console', () => {
+      const consoleSpy = vi.spyOn(console, 'error');
+      const error = new Error('Critical failure');
+      logger.logError('Critical operation failed', error);
+
+      expect(consoleSpy).toHaveBeenCalled();
+      const call = consoleSpy.mock.calls[consoleSpy.mock.calls.length - 1][0];
+      expect(call).toContain('Critical operation failed');
+      expect(call).toContain('Critical failure');
+    });
+
+    it('should handle multiple errors in succession', () => {
+      const errors = [
+        new Error('Error 1'),
+        new Error('Error 2'),
+        new Error('Error 3'),
+      ];
+
+      errors.forEach((err, i) => {
+        logger.logError(`Error ${i + 1}`, err);
+      });
+
+      const logs = logger.getLogs();
+      const errorLogs = logs.filter(l => l.type === 'error');
+      expect(errorLogs).toHaveLength(3);
+    });
+
+    it('should handle mixed request, response, and error logs', () => {
+      logger.logRequest('GET', 'https://api.example.com/data');
+      logger.logResponse('https://api.example.com/data', 200, 100);
+      logger.logError('Processing failed', new Error('Data error'));
+
+      const logs = logger.getLogs();
+      const types = logs.map(l => ('type' in l ? l.type : 'log'));
+      expect(types).toContain('request');
+      expect(types).toContain('response');
+      expect(types).toContain('error');
+    });
+
+    it('should handle info log without data parameter', () => {
+      logger.logInfo('Simple info message');
+
+      const logs = logger.getLogs();
+      const lastLog = logs[logs.length - 1];
+
+      expect(lastLog.message).toBe('Simple info message');
+      expect(lastLog.data).toBeUndefined();
+    });
+
+    it('should handle warn log without data parameter', () => {
+      logger.logWarn('Simple warn message');
+
+      const logs = logger.getLogs();
+      const lastLog = logs[logs.length - 1];
+
+      expect(lastLog.message).toBe('Simple warn message');
+      expect(lastLog.data).toBeUndefined();
+    });
+
+    it('should handle debug log without data parameter', () => {
+      logger.setLogLevel('debug');
+      logger.logDebug('Simple debug message');
+
+      const logs = logger.getLogs();
+      const lastLog = logs[logs.length - 1];
+
+      expect(lastLog.message).toBe('Simple debug message');
+      expect(lastLog.data).toBeUndefined();
+    });
+
+    it('should handle request log without data parameter', () => {
+      logger.logRequest('PUT', 'https://api.example.com/update');
+
+      const logs = logger.getLogs();
+      const lastLog = logs[logs.length - 1];
+
+      expect(lastLog.data).toBeUndefined();
+    });
+
+    it('should handle response log without data parameter', () => {
+      logger.logResponse('https://api.example.com', 204, 50);
+
+      const logs = logger.getLogs();
+      const lastLog = logs[logs.length - 1];
+
+      expect(lastLog.data).toBeUndefined();
+    });
+
+    it('should format generic log entry without type', () => {
+      const formatLogMethod = (logger as any).formatLog.bind(logger);
+
+      const genericLog: any = {
+        timestamp: '2024-01-01T12:00:00Z',
+        level: 'info',
+        message: 'Generic message',
+      };
+
+      const formatted = formatLogMethod(genericLog);
+      expect(formatted).toContain('Generic message');
+      expect(formatted).toMatch(/INFO\s+Generic message/);
+    });
+
+    it('should handle error log without stack trace', () => {
+      const error = { message: 'Error without stack' } as Error;
+      logger.logError('Operation error', error);
+
+      const logs = logger.getLogs();
+      const lastLog = logs[logs.length - 1];
+
+      expect(lastLog.type).toBe('error');
+      expect(lastLog.stack).toBeUndefined();
+    });
+  });
 });
