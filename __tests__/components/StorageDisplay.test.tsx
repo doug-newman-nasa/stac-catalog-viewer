@@ -5,8 +5,8 @@ import { StorageDisplay } from '../../src/components/StorageDisplay';
 import type { StacCatalog } from '../../src/types/stac';
 
 describe('StorageDisplay', () => {
-  it('should render nothing when catalog has no storage property', () => {
-    const catalog: StacCatalog = {
+  it('should render nothing when data has no storage property', () => {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -14,12 +14,12 @@ describe('StorageDisplay', () => {
       links: [],
     };
 
-    const { container } = render(<StorageDisplay catalog={catalog} />);
+    const { container } = render(<StorageDisplay data={data} />);
     expect(container.firstChild).toBeNull();
   });
 
   it('should render nothing when storage property is empty', () => {
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -28,12 +28,12 @@ describe('StorageDisplay', () => {
       storage: {},
     };
 
-    const { container } = render(<StorageDisplay catalog={catalog} />);
+    const { container } = render(<StorageDisplay data={data} />);
     expect(container.firstChild).toBeNull();
   });
 
   it('should render toggle button when storage property exists', () => {
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -45,7 +45,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button', { name: /💾 Storage Information/ });
     expect(toggle).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe('StorageDisplay', () => {
 
   it('should expand and collapse storage information on toggle click', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -65,7 +65,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
 
@@ -83,7 +83,7 @@ describe('StorageDisplay', () => {
 
   it('should display platform and location information', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -95,7 +95,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
     await user.click(toggle);
@@ -108,7 +108,7 @@ describe('StorageDisplay', () => {
 
   it('should display requester pays information when true', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -121,7 +121,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
     await user.click(toggle);
@@ -132,7 +132,7 @@ describe('StorageDisplay', () => {
 
   it('should display requester pays information when false', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -145,7 +145,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
     await user.click(toggle);
@@ -156,7 +156,7 @@ describe('StorageDisplay', () => {
 
   it('should display credentials information', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -169,7 +169,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
     await user.click(toggle);
@@ -180,7 +180,7 @@ describe('StorageDisplay', () => {
 
   it('should display all storage properties', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -194,7 +194,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
     await user.click(toggle);
@@ -207,7 +207,7 @@ describe('StorageDisplay', () => {
 
   it('should display custom storage properties', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -220,7 +220,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
     await user.click(toggle);
@@ -231,7 +231,7 @@ describe('StorageDisplay', () => {
 
   it('should handle object-type storage properties', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -244,7 +244,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
     await user.click(toggle);
@@ -256,7 +256,7 @@ describe('StorageDisplay', () => {
 
   it('should update aria-expanded attribute when toggled', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -267,7 +267,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
 
@@ -282,7 +282,7 @@ describe('StorageDisplay', () => {
 
   it('should not display null or undefined storage properties', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -296,7 +296,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
     await user.click(toggle);
@@ -306,7 +306,7 @@ describe('StorageDisplay', () => {
   });
 
   it('should render nothing when only empty storage:schemes property exists', () => {
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -315,13 +315,13 @@ describe('StorageDisplay', () => {
       'storage:schemes': {},
     };
 
-    const { container } = render(<StorageDisplay catalog={catalog} />);
+    const { container } = render(<StorageDisplay data={data} />);
     expect(container.firstChild).toBeNull();
   });
 
   it('should display storage:schemes information when present', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -337,7 +337,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
     await user.click(toggle);
@@ -350,7 +350,7 @@ describe('StorageDisplay', () => {
 
   it('should display multiple storage schemes', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -370,7 +370,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
     await user.click(toggle);
@@ -385,7 +385,7 @@ describe('StorageDisplay', () => {
 
   it('should display storage:schemes with all possible properties', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -402,7 +402,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
     await user.click(toggle);
@@ -420,7 +420,7 @@ describe('StorageDisplay', () => {
 
   it('should handle both storage and storage:schemes properties', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -437,7 +437,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
     await user.click(toggle);
@@ -450,7 +450,7 @@ describe('StorageDisplay', () => {
 
   it('should display custom properties in storage:schemes', async () => {
     const user = userEvent.setup();
-    const catalog: any = {
+    const data: any = {
       type: 'Catalog',
       stac_version: '1.0.0',
       id: 'test-catalog',
@@ -465,7 +465,7 @@ describe('StorageDisplay', () => {
       },
     };
 
-    render(<StorageDisplay catalog={catalog} />);
+    render(<StorageDisplay data={data} />);
 
     const toggle = screen.getByRole('button');
     await user.click(toggle);

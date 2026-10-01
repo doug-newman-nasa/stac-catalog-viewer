@@ -4,6 +4,7 @@ import { ItemSearch } from '../components/ItemSearch';
 import { ExtentDisplay } from '../components/ExtentDisplay';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
 import { AssetLinks } from '../components/AssetLinks';
+import { StorageDisplay } from '../components/StorageDisplay';
 import { resolveHref, getItemBrowseLinks, getItemBrowseAssets } from '../lib/stac';
 import { applyItemSearchParams, collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
 import { extractItemExtent } from '../lib/itemExtent';
@@ -163,6 +164,7 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
                       {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} />}
                       {itemExtent && <ExtentDisplay extent={itemExtent} />}
                       {item.assets && <AssetLinks assets={item.assets} />}
+                      <StorageDisplay data={item} />
                     </div>
                   );
                 })}

@@ -161,7 +161,7 @@ export function CatalogPage() {
         {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} baseUrl={url} />}
         {keywords.length > 0 && <KeywordsDisplay keywords={keywords} />}
         {data.assets && <AssetLinks assets={data.assets} />}
-        <StorageDisplay catalog={data} />
+        <StorageDisplay data={data} />
       </div>
 
       {!itemsSearchLink && itemLinks.length === 0 && (

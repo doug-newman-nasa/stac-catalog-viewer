@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import type { StacCatalog } from '../types/stac';
 import '../styles/StorageDisplay.css';
 
 interface StorageDisplayProps {
-  catalog: StacCatalog;
+  data: any;
 }
 
 interface StorageInfo {
@@ -23,12 +22,11 @@ interface StorageScheme {
   [key: string]: unknown;
 }
 
-export function StorageDisplay({ catalog }: StorageDisplayProps) {
+export function StorageDisplay({ data }: StorageDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const catalogData = catalog as any;
-  const storageInfo = catalogData.storage as StorageInfo | undefined;
-  const storageSchemes = catalogData['storage:schemes'] as Record<string, StorageScheme> | undefined;
+  const storageInfo = data.storage as StorageInfo | undefined;
+  const storageSchemes = data['storage:schemes'] as Record<string, StorageScheme> | undefined;
 
   const hasStorageInfo = storageInfo && Object.keys(storageInfo).length > 0;
   const hasStorageSchemes = storageSchemes && Object.keys(storageSchemes).length > 0;
