@@ -9,7 +9,7 @@ import '../styles/CatalogPage.css';
 
 interface CollectionSearchResultsPageProps {
   url: string;
-  onNavigateToCollection: (targetUrl: string) => void;
+  onNavigateToCollection: (targetUrl: string, searchParams?: CollectionSearchParams) => void;
   onResultsChange: (hasResults: boolean) => void;
 }
 
@@ -30,7 +30,7 @@ export function CollectionSearchResultsPage({
   const handleCollectionSelect = (collection: StacCatalog) => {
     const selfLink = collection.links?.find((link) => link.rel === 'self');
     const collectionUrl = selfLink ? resolveHref(url, selfLink.href) : `${url}/${collection.id}`;
-    onNavigateToCollection(collectionUrl);
+    onNavigateToCollection(collectionUrl, collectionSearchParams);
   };
 
   const handleCollectionSearch = async (params: CollectionSearchParams) => {

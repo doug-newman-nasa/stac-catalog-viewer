@@ -190,7 +190,10 @@ describe('CollectionSearchResultsPage', () => {
     await user.click(collectionResult!);
 
     await waitFor(() => {
-      expect(mockOnNavigateToCollection).toHaveBeenCalledWith('https://example.com/collections/collection1');
+      expect(mockOnNavigateToCollection).toHaveBeenCalledWith(
+        'https://example.com/collections/collection1',
+        expect.objectContaining({ q: 'collection', limit: 25 })
+      );
     });
   });
 
@@ -228,7 +231,10 @@ describe('CollectionSearchResultsPage', () => {
     await user.click(collectionResult!);
 
     await waitFor(() => {
-      expect(mockOnNavigateToCollection).toHaveBeenCalledWith(`${mockUrl}/collection1`);
+      expect(mockOnNavigateToCollection).toHaveBeenCalledWith(
+        `${mockUrl}/collection1`,
+        expect.objectContaining({ q: 'collection', limit: 25 })
+      );
     });
   });
 

@@ -67,3 +67,14 @@ export function itemSearchParamsToString(params: ItemSearchParams): string {
     limit: params.limit,
   });
 }
+
+export function collectionSearchParamsToItemSearchParams(
+  collectionParams: any // CollectionSearchParams type
+): ItemSearchParams {
+  return {
+    bbox: collectionParams.bbox,
+    bboxString: collectionParams.bboxString,
+    datetime: collectionParams.datetime,
+    limit: collectionParams.limit,
+  };
+}

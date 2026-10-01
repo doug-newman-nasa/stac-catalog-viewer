@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStacNode } from '../hooks/useStacNode';
 import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, resolveHref } from '../lib/stac';
+import { collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
 import { ExtentDisplay } from '../components/ExtentDisplay';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
 import { KeywordsDisplay } from '../components/KeywordsDisplay';
 import { CatalogListingPage } from './CatalogListingPage';
 import { CollectionItemsPage } from './CollectionItemsPage';
 import { CollectionSearchResultsPage } from './CollectionSearchResultsPage';
+import type { CollectionSearchParams } from '../lib/collectionSearch';
 import '../styles/CatalogPage.css';
 
 export function CatalogPage() {
@@ -16,6 +18,7 @@ export function CatalogPage() {
   const [showUrl, setShowUrl] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
   const [hasCollectionSearchResults, setHasCollectionSearchResults] = useState(false);
+  const [collectionSearchParams, setCollectionSearchParams] = useState<CollectionSearchParams>({ limit: 25 });
 
 
   const url = searchParams.get('url');
@@ -30,6 +33,13 @@ export function CatalogPage() {
       setUrlCopied(true);
       setTimeout(() => setUrlCopied(false), 2000);
     }
+  };
+
+  const handleNavigateToCollection = (targetUrl: string, params?: CollectionSearchParams) => {
+    if (params) {
+      setCollectionSearchParams(params);
+    }
+    navigate(`/catalog?url=${encodeURIComponent(targetUrl)}`);
   };
 
 
@@ -154,7 +164,7 @@ export function CatalogPage() {
       {!itemsSearchLink && itemLinks.length === 0 && (
         <CollectionSearchResultsPage
           url={url}
-          onNavigateToCollection={(targetUrl) => navigate(`/catalog?url=${encodeURIComponent(targetUrl)}`)}
+          onNavigateToCollection={handleNavigateToCollection}
           onResultsChange={setHasCollectionSearchResults}
         />
       )}
@@ -164,7 +174,7 @@ export function CatalogPage() {
       )}
 
       {(itemLinks.length > 0 || itemsSearchLink) && (
-        <CollectionItemsPage url={url} itemLinks={itemLinks} itemsSearchLink={itemsSearchLink} />
+        <CollectionItemsPage url={url} itemLinks={itemLinks} itemsSearchLink={itemsSearchLink} collectionSearchParams={collectionSearchParams} />
       )}
     </div>
   );

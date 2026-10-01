@@ -2,22 +2,26 @@ import { useState } from 'react';
 import { useStacItemsSearch } from '../hooks/useStacItemsSearch';
 import { ItemSearch } from '../components/ItemSearch';
 import { resolveHref } from '../lib/stac';
-import { applyItemSearchParams } from '../lib/itemSearch';
+import { applyItemSearchParams, collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
 import { getTotalPages, PAGE_SIZE_OPTIONS, getPaginatedData } from '../lib/pagination';
 import type { StacLink } from '../types/stac';
 import type { ItemSearchParams } from '../lib/itemSearch';
+import type { CollectionSearchParams } from '../lib/collectionSearch';
 import '../styles/CatalogPage.css';
 
 interface CollectionItemsPageProps {
   url: string;
   itemLinks: StacLink[];
   itemsSearchLink: StacLink | undefined;
+  collectionSearchParams?: CollectionSearchParams;
 }
 
-export function CollectionItemsPage({ url, itemLinks, itemsSearchLink }: CollectionItemsPageProps): JSX.Element {
+export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectionSearchParams }: CollectionItemsPageProps): JSX.Element {
   const [itemPageSize, setItemPageSize] = useState(25);
   const [itemCurrentPage, setItemCurrentPage] = useState(1);
-  const [itemSearchParams, setItemSearchParams] = useState<ItemSearchParams>({});
+  const [itemSearchParams, setItemSearchParams] = useState<ItemSearchParams>(() =>
+    collectionSearchParams ? collectionSearchParamsToItemSearchParams(collectionSearchParams) : {}
+  );
 
   const resolvedItemsHref = itemsSearchLink && url ? resolveHref(url, itemsSearchLink.href) : null;
   const itemsSearch = useStacItemsSearch(resolvedItemsHref, itemPageSize, itemSearchParams);
