@@ -1,4 +1,4 @@
-import type { StacCatalog, StacLink, StacItemCollection } from '../types/stac';
+import type { StacCatalog, StacLink, StacItemCollection, StacItem } from '../types/stac';
 import { logger } from './logger';
 
 export async function fetchStacCatalog(url: string): Promise<StacCatalog> {
