@@ -6,6 +6,7 @@ import { ExtentDisplay } from '../components/ExtentDisplay';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
 import { KeywordsDisplay } from '../components/KeywordsDisplay';
 import { AssetLinks } from '../components/AssetLinks';
+import { StorageDisplay } from '../components/StorageDisplay';
 import { CatalogListingPage } from './CatalogListingPage';
 import { CollectionItemsPage } from './CollectionItemsPage';
 import { CollectionSearchResultsPage } from './CollectionSearchResultsPage';
@@ -160,6 +161,7 @@ export function CatalogPage() {
         {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} baseUrl={url} />}
         {keywords.length > 0 && <KeywordsDisplay keywords={keywords} />}
         {data.assets && <AssetLinks assets={data.assets} />}
+        <StorageDisplay catalog={data} />
       </div>
 
       {!itemsSearchLink && itemLinks.length === 0 && (
