@@ -164,6 +164,7 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
                       {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} />}
                       {itemExtent && <ExtentDisplay extent={itemExtent} />}
                       {item.assets && <AssetLinks assets={item.assets} />}
+                      {/* StorageDisplay renders both 'storage' and 'storage:schemes' properties from the item */}
                       <StorageDisplay data={item} />
                     </div>
                   );

@@ -25,8 +25,9 @@ interface StorageScheme {
 export function StorageDisplay({ data }: StorageDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const storageInfo = data.storage as StorageInfo | undefined;
-  const storageSchemes = data['storage:schemes'] as Record<string, StorageScheme> | undefined;
+  // Check for storage properties at top level or in properties object
+  const storageInfo = (data.storage || data.properties?.storage) as StorageInfo | undefined;
+  const storageSchemes = (data['storage:schemes'] || data.properties?.['storage:schemes']) as Record<string, StorageScheme> | undefined;
 
   const hasStorageInfo = storageInfo && Object.keys(storageInfo).length > 0;
   const hasStorageSchemes = storageSchemes && Object.keys(storageSchemes).length > 0;

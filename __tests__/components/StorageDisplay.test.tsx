@@ -473,4 +473,169 @@ describe('StorageDisplay', () => {
     expect(screen.getByText('customProperty:')).toBeInTheDocument();
     expect(screen.getByText('custom-value')).toBeInTheDocument();
   });
+
+  it('should display storage:schemes when item has the property', async () => {
+    const user = userEvent.setup();
+    const item: any = {
+      type: 'Feature',
+      stac_version: '1.0.0',
+      stac_extensions: ['storage'],
+      id: 'MOD02QKM_7.A2024001.0000.061',
+      geometry: null,
+      bbox: null,
+      links: [],
+      assets: {},
+      'storage:schemes': {
+        aws: {
+          type: 'aws-s3',
+          platform: 'https://{bucket}.s3.{region}.amazonaws.com',
+          bucket: 'prod-lads',
+          region: 'us-west-2',
+        },
+      },
+    };
+
+    render(<StorageDisplay data={item} />);
+
+    const toggle = screen.getByRole('button');
+    await user.click(toggle);
+
+    expect(screen.getByText('aws')).toBeInTheDocument();
+    expect(screen.getByText('aws-s3')).toBeInTheDocument();
+    expect(screen.getByText('prod-lads')).toBeInTheDocument();
+    expect(screen.getByText('us-west-2')).toBeInTheDocument();
+  });
+
+  it('should display storage:schemes from item features with multiple schemes', async () => {
+    const user = userEvent.setup();
+    const item: any = {
+      type: 'Feature',
+      id: 'item-1',
+      geometry: null,
+      links: [],
+      assets: {},
+      'storage:schemes': {
+        aws: {
+          type: 'aws-s3',
+          bucket: 'data-bucket',
+          region: 'us-west-2',
+        },
+        azure: {
+          type: 'azure-blob',
+          bucket: 'data-bucket-azure',
+          endpoint: 'https://myaccount.blob.core.windows.net',
+        },
+      },
+    };
+
+    render(<StorageDisplay data={item} />);
+
+    const toggle = screen.getByRole('button');
+    await user.click(toggle);
+
+    expect(screen.getByText('aws')).toBeInTheDocument();
+    expect(screen.getByText('azure')).toBeInTheDocument();
+    expect(screen.getByText('aws-s3')).toBeInTheDocument();
+    expect(screen.getByText('azure-blob')).toBeInTheDocument();
+    expect(screen.getByText('data-bucket')).toBeInTheDocument();
+    expect(screen.getByText('data-bucket-azure')).toBeInTheDocument();
+  });
+
+  it('should display storage:schemes from properties object (STAC item structure)', async () => {
+    const user = userEvent.setup();
+    const item: any = {
+      type: 'Feature',
+      id: 'MOD02QKM_7.A2024001.0000.061',
+      geometry: null,
+      links: [],
+      assets: {},
+      properties: {
+        'storage:schemes': {
+          aws: {
+            type: 'aws-s3',
+            platform: 'https://{bucket}.s3.{region}.amazonaws.com',
+            bucket: 'prod-lads',
+            region: 'us-west-2',
+          },
+        },
+      },
+    };
+
+    render(<StorageDisplay data={item} />);
+
+    const toggle = screen.getByRole('button');
+    await user.click(toggle);
+
+    expect(screen.getByText('aws')).toBeInTheDocument();
+    expect(screen.getByText('aws-s3')).toBeInTheDocument();
+    expect(screen.getByText('prod-lads')).toBeInTheDocument();
+    expect(screen.getByText('us-west-2')).toBeInTheDocument();
+  });
+
+  it('should display storage from properties object and storage:schemes from top level', async () => {
+    const user = userEvent.setup();
+    const item: any = {
+      type: 'Feature',
+      id: 'item-1',
+      geometry: null,
+      links: [],
+      assets: {},
+      properties: {
+        storage: {
+          platform: 'Azure Blob Storage',
+          location: 'https://myaccount.blob.core.windows.net/mycontainer',
+        },
+      },
+      'storage:schemes': {
+        aws: {
+          type: 'aws-s3',
+          bucket: 'data-bucket',
+        },
+      },
+    };
+
+    render(<StorageDisplay data={item} />);
+
+    const toggle = screen.getByRole('button');
+    await user.click(toggle);
+
+    expect(screen.getByText('Azure Blob Storage')).toBeInTheDocument();
+    expect(screen.getByText('https://myaccount.blob.core.windows.net/mycontainer')).toBeInTheDocument();
+    expect(screen.getByText('aws')).toBeInTheDocument();
+    expect(screen.getByText('data-bucket')).toBeInTheDocument();
+  });
+
+  it('should prioritize top-level storage:schemes over properties storage:schemes', async () => {
+    const user = userEvent.setup();
+    const item: any = {
+      type: 'Feature',
+      id: 'item-1',
+      geometry: null,
+      links: [],
+      assets: {},
+      properties: {
+        'storage:schemes': {
+          azure: {
+            type: 'azure-blob',
+            bucket: 'from-properties',
+          },
+        },
+      },
+      'storage:schemes': {
+        aws: {
+          type: 'aws-s3',
+          bucket: 'from-top-level',
+        },
+      },
+    };
+
+    render(<StorageDisplay data={item} />);
+
+    const toggle = screen.getByRole('button');
+    await user.click(toggle);
+
+    expect(screen.getByText('aws')).toBeInTheDocument();
+    expect(screen.getByText('from-top-level')).toBeInTheDocument();
+    expect(screen.queryByText('azure')).not.toBeInTheDocument();
+  });
 });
