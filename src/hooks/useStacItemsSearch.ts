@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { StacItem, StacItemCollection } from '../types/stac';
+import type { ItemSearchParams } from '../lib/itemSearch';
 import { fetchItemCollection, withLimit } from '../lib/stac';
+import { applyItemSearchParams, itemSearchParamsToString } from '../lib/itemSearch';
 import { logger } from '../lib/logger';
 
 interface UseStacItemsSearchState {
@@ -20,7 +22,8 @@ interface UseStacItemsSearchState {
 
 export function useStacItemsSearch(
   itemsHref: string | null,
-  initialPageSize: number = 25
+  initialPageSize: number = 25,
+  searchParams: ItemSearchParams = {}
 ): UseStacItemsSearchState {
   const [pageCache, setPageCache] = useState<StacItemCollection[]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -35,8 +38,9 @@ export function useStacItemsSearch(
   const fetchPage = async (href: string) => {
     setLoading(true);
     setError(null);
-    const url = withLimit(href, pageSize);
-    logger.logInfo('Fetching items page', { url, pageSize });
+    const hrefWithSearchParams = applyItemSearchParams(href, searchParams);
+    const url = withLimit(hrefWithSearchParams, pageSize);
+    logger.logInfo('Fetching items page', { url, pageSize, searchParams });
     try {
       const collection = await fetchItemCollection(url);
       setPageCache([collection]);
@@ -60,7 +64,7 @@ export function useStacItemsSearch(
     }
 
     fetchPage(itemsHref);
-  }, [itemsHref, pageSize]);
+  }, [itemsHref, pageSize, itemSearchParamsToString(searchParams)]);
 
   const goNext = async () => {
     if (!currentPage || loading) return;

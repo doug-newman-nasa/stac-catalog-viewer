@@ -1,22 +1,30 @@
 import { useState } from 'react';
 import { useStacItemsSearch } from '../hooks/useStacItemsSearch';
+import { ItemSearch } from '../components/ItemSearch';
 import { resolveHref } from '../lib/stac';
+import { applyItemSearchParams, collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
 import { getTotalPages, PAGE_SIZE_OPTIONS, getPaginatedData } from '../lib/pagination';
 import type { StacLink } from '../types/stac';
+import type { ItemSearchParams } from '../lib/itemSearch';
+import type { CollectionSearchParams } from '../lib/collectionSearch';
 import '../styles/CatalogPage.css';
 
 interface CollectionItemsPageProps {
   url: string;
   itemLinks: StacLink[];
   itemsSearchLink: StacLink | undefined;
+  collectionSearchParams?: CollectionSearchParams;
 }
 
-export function CollectionItemsPage({ url, itemLinks, itemsSearchLink }: CollectionItemsPageProps): JSX.Element {
+export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectionSearchParams }: CollectionItemsPageProps): JSX.Element {
   const [itemPageSize, setItemPageSize] = useState(25);
   const [itemCurrentPage, setItemCurrentPage] = useState(1);
+  const [itemSearchParams, setItemSearchParams] = useState<ItemSearchParams>(() =>
+    collectionSearchParams ? collectionSearchParamsToItemSearchParams(collectionSearchParams) : {}
+  );
 
   const resolvedItemsHref = itemsSearchLink && url ? resolveHref(url, itemsSearchLink.href) : null;
-  const itemsSearch = useStacItemsSearch(resolvedItemsHref, itemPageSize);
+  const itemsSearch = useStacItemsSearch(resolvedItemsHref, itemPageSize, itemSearchParams);
 
   const handlePageSizeChange = (newSize: number) => {
     setItemPageSize(newSize);
@@ -27,6 +35,18 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink }: Collect
     }
   };
 
+  const handleItemSearch = (params: ItemSearchParams) => {
+    setItemSearchParams(params);
+  };
+
+  const handleItemSearchClear = () => {
+    setItemSearchParams({});
+  };
+
+  const handleItemSearchParamsChange = (params: ItemSearchParams) => {
+    setItemSearchParams(params);
+  };
+
   return (
     <div className="section">
       <div className="section-header">
@@ -34,7 +54,7 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink }: Collect
         <div className="section-controls">
           {itemsSearchLink && url && (
             <a
-              href={`${resolveHref(url, itemsSearchLink.href)}?limit=${itemPageSize}&offset=${(itemsSearch.page - 1) * itemPageSize}`}
+              href={`${applyItemSearchParams(resolveHref(url, itemsSearchLink.href), itemSearchParams)}?limit=${itemPageSize}&offset=${(itemsSearch.page - 1) * itemPageSize}`}
               target="_blank"
               rel="noopener noreferrer"
               className="view-items-link"
@@ -62,6 +82,15 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink }: Collect
 
       {itemsSearchLink ? (
         <>
+          <ItemSearch
+            searchParams={itemSearchParams}
+            onSearchParamsChange={handleItemSearchParamsChange}
+            onSearch={handleItemSearch}
+            onClearSearch={handleItemSearchClear}
+            loading={itemsSearch.loading}
+            error={itemsSearch.error}
+          />
+
           {itemsSearch.loading && (
             <div className="item-search-loading">
               <span className="spinner">⏳</span> Loading items...
@@ -77,12 +106,18 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink }: Collect
             </div>
           )}
 
-          {!itemsSearch.loading && !itemsSearch.error && (
+          {!itemsSearch.loading && !itemsSearch.error && itemsSearch.items.length === 0 && (!itemsSearch.numberMatched || itemsSearch.numberMatched === 0) && (
+            <div className="item-search-no-results">
+              <p className="no-results-message">No items found</p>
+            </div>
+          )}
+
+          {!itemsSearch.loading && !itemsSearch.error && (itemsSearch.items.length > 0 || (itemsSearch.numberMatched && itemsSearch.numberMatched > 0)) && (
             <>
               <div className="pagination pagination-top">
                 <span className="page-info">
                   Page {itemsSearch.page}
-                  {itemsSearch.numberMatched && ` of ~${itemsSearch.numberMatched} items`}
+                  {itemsSearch.numberMatched && itemsSearch.numberMatched > 0 && ` of ~${itemsSearch.numberMatched} items`}
                 </span>
                 <div className="pagination-controls">
                   <button
@@ -103,30 +138,17 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink }: Collect
               </div>
 
               <div className="item-list">
-                {itemsSearch.items.map((item) => {
-                  const itemsEndpointUrl = itemsSearchLink && url ? resolveHref(url, itemsSearchLink.href) : undefined;
-                  const itemUrl = itemsEndpointUrl
-                    ? `${itemsEndpointUrl}?limit=${itemPageSize}&offset=${(itemsSearch.page - 1) * itemPageSize}`
-                    : undefined;
-                  return (
-                    <a
-                      key={item.id}
-                      href={itemUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="item-link"
-                    >
-                      <span className="item-link-title">{item.id}</span>
-                      <span className="item-link-icon">↗</span>
-                    </a>
-                  );
-                })}
+                {itemsSearch.items.map((item) => (
+                  <div key={item.id} className="item-link">
+                    <span className="item-link-title">{item.id}</span>
+                  </div>
+                ))}
               </div>
 
               <div className="pagination">
                 <span className="page-info">
                   Page {itemsSearch.page}
-                  {itemsSearch.numberMatched && ` of ~${itemsSearch.numberMatched} items`}
+                  {itemsSearch.numberMatched && itemsSearch.numberMatched > 0 && ` of ~${itemsSearch.numberMatched} items`}
                 </span>
                 <div className="pagination-controls">
                   <button

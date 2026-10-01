@@ -2039,7 +2039,7 @@ describe('CatalogPage', () => {
 
     renderWithRouter();
 
-    expect(screen.getByText('Failed to fetch items')).toBeInTheDocument();
+    expect(screen.getAllByText('Failed to fetch items')[0]).toBeInTheDocument();
     const retryButton = screen.getByRole('button', { name: /retry/i });
     fireEvent.click(retryButton);
     expect(mockRetry).toHaveBeenCalled();
