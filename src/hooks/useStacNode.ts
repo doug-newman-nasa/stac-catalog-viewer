@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { StacCatalog } from '../types/stac';
 import { fetchStacCatalog } from '../lib/stac';
+import { logger } from '../lib/logger';
 
 interface UseStacNodeState {
   data: StacCatalog | null;
@@ -17,11 +18,15 @@ export function useStacNode(url: string): UseStacNodeState {
   const fetchData = async () => {
     setLoading(true);
     setError(null);
+    logger.logInfo('Fetching STAC node', { url });
     try {
       const catalog = await fetchStacCatalog(url);
       setData(catalog);
+      logger.logInfo('Successfully loaded STAC node', { url, type: catalog.type });
     } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error);
+      logger.logError('Error in useStacNode hook', error, { url });
     } finally {
       setLoading(false);
     }
