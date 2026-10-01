@@ -77,18 +77,18 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink }: Collect
             </div>
           )}
 
-          {!itemsSearch.loading && !itemsSearch.error && itemsSearch.items.length === 0 && !itemsSearch.numberMatched && (
+          {!itemsSearch.loading && !itemsSearch.error && itemsSearch.items.length === 0 && (!itemsSearch.numberMatched || itemsSearch.numberMatched === 0) && (
             <div className="item-search-no-results">
               <p className="no-results-message">No items found</p>
             </div>
           )}
 
-          {!itemsSearch.loading && !itemsSearch.error && (itemsSearch.items.length > 0 || itemsSearch.numberMatched) && (
+          {!itemsSearch.loading && !itemsSearch.error && (itemsSearch.items.length > 0 || (itemsSearch.numberMatched && itemsSearch.numberMatched > 0)) && (
             <>
               <div className="pagination pagination-top">
                 <span className="page-info">
                   Page {itemsSearch.page}
-                  {itemsSearch.numberMatched && ` of ~${itemsSearch.numberMatched} items`}
+                  {itemsSearch.numberMatched && itemsSearch.numberMatched > 0 && ` of ~${itemsSearch.numberMatched} items`}
                 </span>
                 <div className="pagination-controls">
                   <button
@@ -132,7 +132,7 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink }: Collect
               <div className="pagination">
                 <span className="page-info">
                   Page {itemsSearch.page}
-                  {itemsSearch.numberMatched && ` of ~${itemsSearch.numberMatched} items`}
+                  {itemsSearch.numberMatched && itemsSearch.numberMatched > 0 && ` of ~${itemsSearch.numberMatched} items`}
                 </span>
                 <div className="pagination-controls">
                   <button
