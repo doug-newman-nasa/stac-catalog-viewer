@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStacNode } from '../hooks/useStacNode';
-import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, resolveHref } from '../lib/stac';
-import { collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
+import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords } from '../lib/stac';
 import { ExtentDisplay } from '../components/ExtentDisplay';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
 import { KeywordsDisplay } from '../components/KeywordsDisplay';
+import { AssetLinks } from '../components/AssetLinks';
 import { CatalogListingPage } from './CatalogListingPage';
 import { CollectionItemsPage } from './CollectionItemsPage';
 import { CollectionSearchResultsPage } from './CollectionSearchResultsPage';
@@ -159,6 +159,7 @@ export function CatalogPage() {
         {data.extent && <ExtentDisplay extent={data.extent} />}
         {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} baseUrl={url} />}
         {keywords.length > 0 && <KeywordsDisplay keywords={keywords} />}
+        {data.assets && <AssetLinks assets={data.assets} />}
       </div>
 
       {!itemsSearchLink && itemLinks.length === 0 && (
