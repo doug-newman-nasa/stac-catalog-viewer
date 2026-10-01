@@ -1,33 +1,76 @@
 import type { StacCatalog, StacLink, StacItemCollection } from '../types/stac';
+import { logger } from './logger';
 
 export async function fetchStacCatalog(url: string): Promise<StacCatalog> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  const startTime = performance.now();
+  logger.logRequest('GET', url);
+
+  try {
+    const response = await fetch(url);
+    const duration = performance.now() - startTime;
+
+    if (!response.ok) {
+      logger.logResponse(url, response.status, duration, { statusText: response.statusText });
+      const error = `HTTP ${response.status}: ${response.statusText}`;
+      logger.logError('Failed to fetch STAC catalog', error, { url });
+      throw new Error(error);
+    }
+
+    const data = await response.json();
+    logger.logResponse(url, response.status, duration, { dataType: typeof data });
+
+    if (!data.type || !data.links) {
+      const error = 'Invalid STAC Catalog: missing type or links';
+      logger.logError('Invalid catalog response', error, { url, hasType: !!data.type, hasLinks: !!data.links });
+      throw new Error(error);
+    }
+
+    return data as StacCatalog;
+  } catch (error) {
+    const duration = performance.now() - startTime;
+    if (error instanceof Error) {
+      logger.logError('Error fetching STAC catalog', error, { url, duration });
+    }
+    throw error;
   }
-
-  const data = await response.json();
-
-  if (!data.type || !data.links) {
-    throw new Error('Invalid STAC Catalog: missing type or links');
-  }
-
-  return data as StacCatalog;
 }
 
 export async function fetchItemCollection(url: string): Promise<StacItemCollection> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  const startTime = performance.now();
+  logger.logRequest('GET', url);
+
+  try {
+    const response = await fetch(url);
+    const duration = performance.now() - startTime;
+
+    if (!response.ok) {
+      logger.logResponse(url, response.status, duration, { statusText: response.statusText });
+      const error = `HTTP ${response.status}: ${response.statusText}`;
+      logger.logError('Failed to fetch item collection', error, { url });
+      throw new Error(error);
+    }
+
+    const data = await response.json();
+    logger.logResponse(url, response.status, duration, { dataType: typeof data, itemCount: data.features?.length || 0 });
+
+    if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
+      const error = 'Invalid STAC ItemCollection: missing type or features';
+      logger.logError('Invalid item collection response', error, {
+        url,
+        hasType: !!data.type,
+        hasFeatures: Array.isArray(data.features),
+      });
+      throw new Error(error);
+    }
+
+    return data as StacItemCollection;
+  } catch (error) {
+    const duration = performance.now() - startTime;
+    if (error instanceof Error) {
+      logger.logError('Error fetching item collection', error, { url, duration });
+    }
+    throw error;
   }
-
-  const data = await response.json();
-
-  if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
-    throw new Error('Invalid STAC ItemCollection: missing type or features');
-  }
-
-  return data as StacItemCollection;
 }
 
 export function getChildLinks(catalog: StacCatalog): StacLink[] {
@@ -77,7 +120,7 @@ export function resolveHref(base: string, href: string): string {
   try {
     return new URL(href, base).toString();
   } catch (e) {
-    console.error('Failed to resolve href', { base, href }, e);
+    logger.logError('Failed to resolve href', e instanceof Error ? e : new Error(String(e)), { base, href });
     return href;
   }
 }

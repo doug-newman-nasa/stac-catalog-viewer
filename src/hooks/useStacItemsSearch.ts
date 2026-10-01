@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { StacItem, StacItemCollection } from '../types/stac';
 import { fetchItemCollection, withLimit } from '../lib/stac';
+import { logger } from '../lib/logger';
 
 interface UseStacItemsSearchState {
   items: StacItem[];
@@ -34,12 +35,17 @@ export function useStacItemsSearch(
   const fetchPage = async (href: string) => {
     setLoading(true);
     setError(null);
+    const url = withLimit(href, pageSize);
+    logger.logInfo('Fetching items page', { url, pageSize });
     try {
-      const collection = await fetchItemCollection(withLimit(href, pageSize));
+      const collection = await fetchItemCollection(url);
       setPageCache([collection]);
       setCurrentPageIndex(0);
+      logger.logInfo('Successfully loaded items page', { url, itemCount: collection.features.length });
     } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error);
+      logger.logError('Error fetching items page', error, { url, pageSize });
     } finally {
       setLoading(false);
     }
@@ -64,12 +70,16 @@ export function useStacItemsSearch(
 
     setLoading(true);
     setError(null);
+    logger.logInfo('Going to next items page', { url: nextLink.href });
     try {
       const nextCollection = await fetchItemCollection(nextLink.href);
       setPageCache([...pageCache, nextCollection]);
       setCurrentPageIndex(currentPageIndex + 1);
+      logger.logInfo('Successfully loaded next page', { url: nextLink.href, itemCount: nextCollection.features.length, newPage: currentPageIndex + 2 });
     } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error);
+      logger.logError('Error going to next page', error, { url: nextLink.href });
     } finally {
       setLoading(false);
     }
