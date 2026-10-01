@@ -58,6 +58,11 @@ export function CollectionSearch({ baseUrl, onCollectionSelect }: CollectionSear
     }));
   };
 
+  const handleClearAll = () => {
+    setSearchParams({ limit: 25 });
+    clearResults();
+  };
+
   const bboxValue = searchParams.bbox ? searchParams.bbox.join(', ') : '';
 
   return (
@@ -135,7 +140,7 @@ export function CollectionSearch({ baseUrl, onCollectionSelect }: CollectionSear
           {(searchParams.q || searchParams.bbox || searchParams.datetime) && (
             <button
               type="button"
-              onClick={clearResults}
+              onClick={handleClearAll}
               className="clear-button"
               disabled={loading}
             >
