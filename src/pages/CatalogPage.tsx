@@ -219,7 +219,7 @@ export function CatalogPage() {
         />
       )}
 
-      {(collectionSearchResults.length > 0 || collectionSearchLoading) && (
+      {(collectionSearchResults.length > 0 || collectionSearchLoading) && !itemsSearchLink && itemLinks.length === 0 && (
         <div className="section">
           <div className="section-header">
             <h3 className="section-title">Search Results</h3>
