@@ -431,6 +431,17 @@ export function CatalogPage() {
           <div className="section-header">
             <h3 className="section-title">Items</h3>
             <div className="section-controls">
+              {itemsSearchLink && url && (
+                <a
+                  href={`${resolveHref(url, itemsSearchLink.href)}?limit=${itemPageSize}&offset=${(itemsSearch.page - 1) * itemPageSize}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="view-items-link"
+                  title="View items with current parameters"
+                >
+                  View Items Endpoint ↗
+                </a>
+              )}
               <label className="page-size-label">
                 Per page:
                 <select
@@ -500,8 +511,10 @@ export function CatalogPage() {
 
                   <div className="item-list">
                     {itemsSearch.items.map((item) => {
-                      const itemSelfLink = item.links?.find((link) => link.rel === 'self');
-                      const itemUrl = itemSelfLink ? resolveHref(url, itemSelfLink.href) : undefined;
+                      const itemsEndpointUrl = itemsSearchLink && url ? resolveHref(url, itemsSearchLink.href) : undefined;
+                      const itemUrl = itemsEndpointUrl
+                        ? `${itemsEndpointUrl}?limit=${itemPageSize}&offset=${(itemsSearch.page - 1) * itemPageSize}`
+                        : undefined;
                       return (
                         <a
                           key={item.id}
