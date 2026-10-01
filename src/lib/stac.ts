@@ -124,3 +124,28 @@ export function resolveHref(base: string, href: string): string {
     return href;
   }
 }
+
+export function getItemBrowseLinks(item: StacItem): StacLink[] {
+  return (item.links || []).filter((link) => link.rel === 'preview' || link.rel === 'browse');
+}
+
+export function getItemBrowseAssets(item: StacItem): Array<{ href: string; title?: string; type?: string }> {
+  if (!item.assets) return [];
+  return Object.entries(item.assets)
+    .filter(([_, asset]) => {
+      const assetObj = asset as any;
+      if (!assetObj.type) return false;
+      return assetObj.type === 'image/jpeg' || assetObj.type === 'image/png' || assetObj.type === 'image/gif' || assetObj.type === 'image/webp' ||
+             (assetObj.type && assetObj.type.startsWith('image/')) ||
+             assetObj.type.includes('browse') ||
+             assetObj.type.includes('thumbnail');
+    })
+    .map(([key, asset]) => {
+      const assetObj = asset as any;
+      return {
+        href: assetObj.href,
+        title: assetObj.title || key,
+        type: assetObj.type,
+      };
+    });
+}
