@@ -106,6 +106,31 @@ export function getBrowseAssets(catalog: StacCatalog): Array<{ href: string; tit
     }));
 }
 
+export function getItemBrowseLinks(item: any): StacLink[] {
+  return (item.links || []).filter((link: StacLink) => link.rel === 'preview' || link.rel === 'browse');
+}
+
+export function getItemBrowseAssets(item: any): Array<{ href: string; title?: string; type?: string }> {
+  if (!item.assets) return [];
+  return Object.entries(item.assets)
+    .filter(([_, asset]) => {
+      const assetObj = asset as any;
+      if (!assetObj.type) return false;
+      return assetObj.type === 'image/jpeg' || assetObj.type === 'image/png' || assetObj.type === 'image/gif' || assetObj.type === 'image/webp' ||
+             (assetObj.type && assetObj.type.startsWith('image/')) ||
+             assetObj.type.includes('browse') ||
+             assetObj.type.includes('thumbnail');
+    })
+    .map(([key, asset]) => {
+      const assetObj = asset as any;
+      return {
+        href: assetObj.href,
+        title: assetObj.title || key,
+        type: assetObj.type,
+      };
+    });
+}
+
 export function getKeywords(catalog: StacCatalog): string[] {
   return catalog.keywords || [];
 }

@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { useStacItemsSearch } from '../hooks/useStacItemsSearch';
 import { ItemSearch } from '../components/ItemSearch';
-import { resolveHref } from '../lib/stac';
+import { ExtentDisplay } from '../components/ExtentDisplay';
+import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
+import { AssetLinks } from '../components/AssetLinks';
+import { resolveHref, getItemBrowseLinks, getItemBrowseAssets } from '../lib/stac';
 import { applyItemSearchParams, collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
+import { extractItemExtent } from '../lib/itemExtent';
 import { getTotalPages, PAGE_SIZE_OPTIONS, getPaginatedData } from '../lib/pagination';
 import type { StacLink } from '../types/stac';
 import type { ItemSearchParams } from '../lib/itemSearch';
@@ -138,11 +142,30 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
               </div>
 
               <div className="item-list">
-                {itemsSearch.items.map((item) => (
-                  <div key={item.id} className="item-link">
-                    <span className="item-link-title">{item.id}</span>
-                  </div>
-                ))}
+                {itemsSearch.items.map((item) => {
+                  const itemExtent = extractItemExtent(item);
+                  const browseLinks = getItemBrowseLinks(item);
+                  const browseAssets = getItemBrowseAssets(item);
+                  const browseImages = [
+                    ...browseLinks,
+                    ...browseAssets.map((asset) => ({
+                      rel: 'browse',
+                      href: asset.href,
+                      title: asset.title,
+                      type: asset.type,
+                    })),
+                  ];
+                  return (
+                    <div key={item.id} className="item-card">
+                      <div className="item-card-header">
+                        <span className="item-link-title">{item.id}</span>
+                      </div>
+                      {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} />}
+                      {itemExtent && <ExtentDisplay extent={itemExtent} />}
+                      {item.assets && <AssetLinks assets={item.assets} />}
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="pagination">
