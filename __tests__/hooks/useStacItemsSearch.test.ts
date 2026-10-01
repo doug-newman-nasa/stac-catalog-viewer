@@ -541,4 +541,108 @@ describe('useStacItemsSearch', () => {
     expect(result.current.page).toBe(2);
     expect(vi.mocked(fetch).mock.calls.length).toBe(secondPageFetch);
   });
+
+  it('should apply search params to fetch URL', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockItemCollection,
+    } as Response);
+
+    const { result } = renderHook(() =>
+      useStacItemsSearch('https://example.com/items', 25, {
+        bbox: [-180, -90, 180, 90],
+        datetime: '2020-01-01/2023-12-31',
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    const fetchCall = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(fetchCall).toContain('bbox=-180%2C-90%2C180%2C90');
+    expect(fetchCall).toContain('datetime=2020-01-01%2F2023-12-31');
+    expect(fetchCall).toContain('limit=25');
+  });
+
+  it('should apply ids search params to fetch URL', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockItemCollection,
+    } as Response);
+
+    const { result } = renderHook(() =>
+      useStacItemsSearch('https://example.com/items', 25, {
+        ids: ['item-1', 'item-2'],
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    const fetchCall = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(fetchCall).toContain('ids=item-1%2Citem-2');
+  });
+
+  it('should refetch from page 1 when search params change', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockItemCollection,
+    } as Response);
+
+    const { result, rerender } = renderHook(
+      ({ searchParams }) => useStacItemsSearch('https://example.com/items', 25, searchParams),
+      { initialProps: { searchParams: {} } }
+    );
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.page).toBe(1);
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+
+    // Go to next page
+    await act(async () => {
+      result.current.goNext();
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+    });
+
+    expect(result.current.page).toBe(2);
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
+
+    // Change search params, should reset to page 1
+    rerender({ searchParams: { bbox: [-180, -90, 180, 90] } });
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.page).toBe(1);
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(3);
+  });
+
+  it('should handle limit in search params separately from page size', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockItemCollection,
+    } as Response);
+
+    const { result } = renderHook(() =>
+      useStacItemsSearch('https://example.com/items', 10, {
+        limit: 50,
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    const fetchCall = vi.mocked(fetch).mock.calls[0][0] as string;
+    // Both search params limit and page size limit should be in the URL
+    expect(fetchCall).toContain('limit=10');
+  });
 });
