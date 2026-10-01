@@ -134,24 +134,11 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink }: Collect
               </div>
 
               <div className="item-list">
-                {itemsSearch.items.map((item) => {
-                  const itemsEndpointUrl = itemsSearchLink && url ? applyItemSearchParams(resolveHref(url, itemsSearchLink.href), itemSearchParams) : undefined;
-                  const itemUrl = itemsEndpointUrl
-                    ? `${itemsEndpointUrl}?limit=${itemPageSize}&offset=${(itemsSearch.page - 1) * itemPageSize}`
-                    : undefined;
-                  return (
-                    <a
-                      key={item.id}
-                      href={itemUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="item-link"
-                    >
-                      <span className="item-link-title">{item.id}</span>
-                      <span className="item-link-icon">↗</span>
-                    </a>
-                  );
-                })}
+                {itemsSearch.items.map((item) => (
+                  <div key={item.id} className="item-link">
+                    <span className="item-link-title">{item.id}</span>
+                  </div>
+                ))}
               </div>
 
               <div className="pagination">
