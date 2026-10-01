@@ -4,6 +4,7 @@ import {
   applyItemSearchParams,
   isItemSearchParamsEmpty,
   itemSearchParamsToString,
+  collectionSearchParamsToItemSearchParams,
   type ItemSearchParams,
 } from '../../src/lib/itemSearch';
 
@@ -229,6 +230,125 @@ describe('Item Search', () => {
         datetime: '2020-01-01/2023-12-31',
       };
       expect(itemSearchParamsToString(params1)).toBe(itemSearchParamsToString(params2));
+    });
+  });
+
+  describe('collectionSearchParamsToItemSearchParams', () => {
+    it('should convert collection params with all fields to item search params', () => {
+      const collectionParams = {
+        bbox: [-120, -60, 120, 60],
+        bboxString: '-120,-60,120,60',
+        datetime: '2021-01-01/2021-12-31',
+        limit: 100,
+      };
+      const result = collectionSearchParamsToItemSearchParams(collectionParams);
+      expect(result.bbox).toEqual([-120, -60, 120, 60]);
+      expect(result.bboxString).toBe('-120,-60,120,60');
+      expect(result.datetime).toBe('2021-01-01/2021-12-31');
+      expect(result.limit).toBe(100);
+    });
+
+    it('should convert collection params with only bbox', () => {
+      const collectionParams = {
+        bbox: [-180, -90, 180, 90],
+      };
+      const result = collectionSearchParamsToItemSearchParams(collectionParams);
+      expect(result.bbox).toEqual([-180, -90, 180, 90]);
+      expect(result.bboxString).toBeUndefined();
+      expect(result.datetime).toBeUndefined();
+      expect(result.limit).toBeUndefined();
+    });
+
+    it('should convert collection params with only datetime', () => {
+      const collectionParams = {
+        datetime: '2020-01-01/2023-12-31',
+      };
+      const result = collectionSearchParamsToItemSearchParams(collectionParams);
+      expect(result.datetime).toBe('2020-01-01/2023-12-31');
+      expect(result.bbox).toBeUndefined();
+      expect(result.bboxString).toBeUndefined();
+      expect(result.limit).toBeUndefined();
+    });
+
+    it('should convert collection params with only limit', () => {
+      const collectionParams = {
+        limit: 50,
+      };
+      const result = collectionSearchParamsToItemSearchParams(collectionParams);
+      expect(result.limit).toBe(50);
+      expect(result.bbox).toBeUndefined();
+      expect(result.datetime).toBeUndefined();
+      expect(result.bboxString).toBeUndefined();
+    });
+
+    it('should convert empty collection params', () => {
+      const collectionParams = {};
+      const result = collectionSearchParamsToItemSearchParams(collectionParams);
+      expect(result.bbox).toBeUndefined();
+      expect(result.bboxString).toBeUndefined();
+      expect(result.datetime).toBeUndefined();
+      expect(result.limit).toBeUndefined();
+    });
+
+    it('should convert collection params with bbox and datetime', () => {
+      const collectionParams = {
+        bbox: [-100, -50, 100, 50],
+        datetime: '2022-06-01/2022-12-31',
+      };
+      const result = collectionSearchParamsToItemSearchParams(collectionParams);
+      expect(result.bbox).toEqual([-100, -50, 100, 50]);
+      expect(result.datetime).toBe('2022-06-01/2022-12-31');
+      expect(result.bboxString).toBeUndefined();
+      expect(result.limit).toBeUndefined();
+    });
+
+    it('should convert collection params with bboxString but no bbox', () => {
+      const collectionParams = {
+        bboxString: '-120,-60,120,60',
+      };
+      const result = collectionSearchParamsToItemSearchParams(collectionParams);
+      expect(result.bboxString).toBe('-120,-60,120,60');
+      expect(result.bbox).toBeUndefined();
+      expect(result.datetime).toBeUndefined();
+      expect(result.limit).toBeUndefined();
+    });
+
+    it('should not copy ids field from collection params', () => {
+      const collectionParams = {
+        ids: ['id1', 'id2'],
+        bbox: [-180, -90, 180, 90],
+      };
+      const result = collectionSearchParamsToItemSearchParams(collectionParams);
+      expect(result.ids).toBeUndefined();
+      expect(result.bbox).toEqual([-180, -90, 180, 90]);
+    });
+
+    it('should handle null values in collection params', () => {
+      const collectionParams = {
+        bbox: null,
+        datetime: null,
+        limit: null,
+      };
+      const result = collectionSearchParamsToItemSearchParams(collectionParams);
+      expect(result.bbox).toBeNull();
+      expect(result.datetime).toBeNull();
+      expect(result.limit).toBeNull();
+    });
+
+    it('should convert collection params with all fields present', () => {
+      const collectionParams = {
+        bbox: [-120, -60, 120, 60],
+        bboxString: '-120,-60,120,60',
+        datetime: '2021-01-01/2021-12-31',
+        limit: 100,
+        otherField: 'should be ignored',
+      };
+      const result = collectionSearchParamsToItemSearchParams(collectionParams);
+      expect(result.bbox).toEqual([-120, -60, 120, 60]);
+      expect(result.bboxString).toBe('-120,-60,120,60');
+      expect(result.datetime).toBe('2021-01-01/2021-12-31');
+      expect(result.limit).toBe(100);
+      expect((result as any).otherField).toBeUndefined();
     });
   });
 });
