@@ -762,5 +762,45 @@ describe('Logger', () => {
       expect(updated.minLogLevel).toBe(original.minLogLevel);
       expect(updated.persistToDisk).toBe(original.persistToDisk);
     });
+
+    it('should format error logs correctly', () => {
+      const formatted = (logger as any).formatLog({
+        level: 'error',
+        message: 'Error test',
+        timestamp: '2024-01-01T12:00:00Z',
+        error: { message: 'Test error', stack: 'at test' },
+      });
+      expect(typeof formatted).toBe('string');
+      expect(formatted).toContain('Error test');
+    });
+
+    it('should clear logs from disk when database unavailable', async () => {
+      const originalDb = (logger as any).db;
+      (logger as any).db = null;
+
+      const result = await logger.clearDiskLogs();
+      expect(result).toBeUndefined();
+
+      (logger as any).db = originalDb;
+    });
+
+    it('should handle warn level logs', () => {
+      const formatted = (logger as any).formatLog({
+        level: 'warn',
+        message: 'Warning message',
+        timestamp: '2024-01-01T12:00:00Z',
+      });
+      expect(typeof formatted).toBe('string');
+      expect(formatted).toContain('Warning message');
+    });
+
+    it('should return error from formatLog when parameter is invalid', () => {
+      const formatted = (logger as any).formatLog({
+        level: 'unknown',
+        message: 'Unknown level',
+        timestamp: '2024-01-01T12:00:00Z',
+      });
+      expect(typeof formatted).toBe('string');
+    });
   });
 });

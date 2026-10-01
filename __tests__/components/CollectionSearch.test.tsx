@@ -191,4 +191,130 @@ describe('CollectionSearch Component', () => {
     const searchButton = screen.getByRole('button', { name: /Searching/i });
     expect(searchButton).toBeDisabled();
   });
+
+  it('should display bbox input with placeholder', async () => {
+    const user = userEvent.setup();
+    render(
+      <CollectionSearch
+        searchParams={defaultSearchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    await user.click(advancedToggle);
+
+    const bboxInput = screen.getByPlaceholderText(/-180, -90, 180, 90/i);
+    expect(bboxInput).toBeInTheDocument();
+    expect((bboxInput as HTMLInputElement).placeholder).toContain('180');
+  });
+
+  it('should display datetime input with ISO format placeholder', async () => {
+    const user = userEvent.setup();
+    render(
+      <CollectionSearch
+        searchParams={defaultSearchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    await user.click(advancedToggle);
+
+    const datetimeInput = screen.getByPlaceholderText(/2020-01-01\/2023-12-31/i);
+    expect(datetimeInput).toBeInTheDocument();
+  });
+
+  it('should handle invalid limit input (NaN)', () => {
+    render(
+      <CollectionSearch
+        searchParams={defaultSearchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    fireEvent.click(advancedToggle);
+
+    const limitInput = screen.getByDisplayValue('25');
+    fireEvent.change(limitInput, { target: { value: 'invalid' } });
+
+    expect(mockOnSearchParamsChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        limit: undefined,
+      })
+    );
+  });
+
+  it('should update limit when valid number is entered', () => {
+    render(
+      <CollectionSearch
+        searchParams={defaultSearchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    fireEvent.click(advancedToggle);
+
+    const limitInput = screen.getByDisplayValue('25');
+    fireEvent.change(limitInput, { target: { value: '50' } });
+
+    expect(mockOnSearchParamsChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        limit: 50,
+      })
+    );
+  });
+
+  it('should allow toggling advanced filters open and closed', async () => {
+    const user = userEvent.setup();
+    render(
+      <CollectionSearch
+        searchParams={defaultSearchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    // Initially hidden
+    let advancedSection = document.querySelector('.advanced-section');
+    expect(advancedSection).not.toBeInTheDocument();
+
+    // Open
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    await user.click(advancedToggle);
+    advancedSection = document.querySelector('.advanced-section');
+    expect(advancedSection).toBeInTheDocument();
+
+    // Close
+    await user.click(advancedToggle);
+    advancedSection = document.querySelector('.advanced-section');
+    expect(advancedSection).not.toBeInTheDocument();
+  });
+
+  it('should disable clear button when loading', () => {
+    const searchParams: CollectionSearchParams = { q: 'sentinel', limit: 25 };
+    render(
+      <CollectionSearch
+        searchParams={searchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+        loading={true}
+      />
+    );
+
+    const clearButton = screen.getByRole('button', { name: /Clear Results/i });
+    expect(clearButton).toBeDisabled();
+  });
 });
