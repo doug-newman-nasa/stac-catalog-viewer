@@ -2124,4 +2124,59 @@ describe('CatalogPage', () => {
 
     expect(screen.getByText('dynamic-item1')).toBeInTheDocument();
   });
+
+  it('should render CollectionSearch component', () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    vi.mocked(useStacItemsSearch).mockReturnValue(mockItemsSearchDefault);
+
+    renderWithRouter();
+
+    const collectionSearch = document.querySelector('.collection-search');
+    expect(collectionSearch).toBeTruthy();
+  });
+
+  it('should render search form in CollectionSearch', () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    vi.mocked(useStacItemsSearch).mockReturnValue(mockItemsSearchDefault);
+
+    renderWithRouter();
+
+    const searchForm = document.querySelector('.collection-search-form');
+    expect(searchForm).toBeTruthy();
+
+    const searchInput = document.querySelector('input[placeholder*="Search"]');
+    expect(searchInput).toBeTruthy();
+
+    const searchButton = document.querySelector('.search-button');
+    expect(searchButton).toBeTruthy();
+  });
+
+  it('should render advanced filters button in CollectionSearch', () => {
+    vi.mocked(useStacNode).mockReturnValue({
+      data: mockCatalog,
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+
+    vi.mocked(useStacItemsSearch).mockReturnValue(mockItemsSearchDefault);
+
+    renderWithRouter();
+
+    const advancedToggle = document.querySelector('.advanced-toggle');
+    expect(advancedToggle).toBeTruthy();
+    expect(advancedToggle?.textContent).toContain('Advanced');
+  });
 });

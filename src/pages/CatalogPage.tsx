@@ -6,6 +6,7 @@ import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAss
 import { ExtentDisplay } from '../components/ExtentDisplay';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
 import { KeywordsDisplay } from '../components/KeywordsDisplay';
+import { CollectionSearch } from '../components/CollectionSearch';
 import '../styles/CatalogPage.css';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -32,6 +33,14 @@ export function CatalogPage() {
       navigator.clipboard.writeText(url);
       setUrlCopied(true);
       setTimeout(() => setUrlCopied(false), 2000);
+    }
+  };
+
+  const handleCollectionSelect = (collection: any) => {
+    if (url) {
+      const selfLink = collection.links?.find((link: any) => link.rel === 'self');
+      const collectionUrl = selfLink ? resolveHref(url, selfLink.href) : `${url}/${collection.id}`;
+      navigate(`/catalog?url=${encodeURIComponent(collectionUrl)}`);
     }
   };
 
@@ -162,6 +171,8 @@ export function CatalogPage() {
         {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} baseUrl={url} />}
         {keywords.length > 0 && <KeywordsDisplay keywords={keywords} />}
       </div>
+
+      <CollectionSearch baseUrl={url} onCollectionSelect={handleCollectionSelect} />
 
       {childLinks.length > 0 && (
         <div className="section">
