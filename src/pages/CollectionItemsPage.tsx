@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useStacItemsSearch } from '../hooks/useStacItemsSearch';
 import { ItemSearch } from '../components/ItemSearch';
 import { ExtentDisplay } from '../components/ExtentDisplay';
-import { resolveHref } from '../lib/stac';
+import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
+import { resolveHref, getItemBrowseLinks, getItemBrowseAssets } from '../lib/stac';
 import { applyItemSearchParams, collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
 import { extractItemExtent } from '../lib/itemExtent';
 import { getTotalPages, PAGE_SIZE_OPTIONS, getPaginatedData } from '../lib/pagination';
@@ -142,11 +143,23 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
               <div className="item-list">
                 {itemsSearch.items.map((item) => {
                   const itemExtent = extractItemExtent(item);
+                  const browseLinks = getItemBrowseLinks(item);
+                  const browseAssets = getItemBrowseAssets(item);
+                  const browseImages = [
+                    ...browseLinks,
+                    ...browseAssets.map((asset) => ({
+                      rel: 'browse',
+                      href: asset.href,
+                      title: asset.title,
+                      type: asset.type,
+                    })),
+                  ];
                   return (
                     <div key={item.id} className="item-card">
                       <div className="item-card-header">
                         <span className="item-link-title">{item.id}</span>
                       </div>
+                      {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} />}
                       {itemExtent && <ExtentDisplay extent={itemExtent} />}
                     </div>
                   );

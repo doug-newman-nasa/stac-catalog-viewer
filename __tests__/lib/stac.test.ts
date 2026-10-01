@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, withLimit, fetchItemCollection, resolveHref } from '../../src/lib/stac';
-import type { StacCatalog } from '../../src/types/stac';
+import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, withLimit, fetchItemCollection, resolveHref, getItemBrowseLinks, getItemBrowseAssets } from '../../src/lib/stac';
+import type { StacCatalog, StacItem } from '../../src/types/stac';
 
 describe('stac utilities', () => {
   beforeEach(() => {
@@ -645,6 +645,142 @@ describe('stac utilities', () => {
       await expect(
         fetchItemCollection('https://example.com/items')
       ).rejects.toThrow('Invalid STAC ItemCollection: missing type or features');
+    });
+  });
+
+  describe('getItemBrowseLinks', () => {
+    it('should return browse links from item', () => {
+      const item: StacItem = {
+        type: 'Feature',
+        id: 'test-item',
+        geometry: null,
+        properties: {},
+        links: [
+          { rel: 'browse', href: 'https://example.com/browse.png' },
+          { rel: 'self', href: 'https://example.com/item.json' },
+          { rel: 'preview', href: 'https://example.com/preview.jpg' },
+        ],
+      };
+
+      const result = getItemBrowseLinks(item);
+      expect(result).toHaveLength(2);
+      expect(result[0].rel).toBe('browse');
+      expect(result[1].rel).toBe('preview');
+    });
+
+    it('should return empty array if no browse links', () => {
+      const item: StacItem = {
+        type: 'Feature',
+        id: 'test-item',
+        geometry: null,
+        properties: {},
+        links: [
+          { rel: 'self', href: 'https://example.com/item.json' },
+        ],
+      };
+
+      const result = getItemBrowseLinks(item);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should return empty array if no links', () => {
+      const item: StacItem = {
+        type: 'Feature',
+        id: 'test-item',
+        geometry: null,
+        properties: {},
+      };
+
+      const result = getItemBrowseLinks(item);
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('getItemBrowseAssets', () => {
+    it('should return image assets from item', () => {
+      const item: StacItem = {
+        type: 'Feature',
+        id: 'test-item',
+        geometry: null,
+        properties: {},
+        assets: {
+          thumbnail: {
+            href: 'https://example.com/thumb.jpg',
+            type: 'image/jpeg',
+            title: 'Thumbnail',
+          },
+          preview: {
+            href: 'https://example.com/preview.png',
+            type: 'image/png',
+          },
+          data: {
+            href: 'https://example.com/data.tif',
+            type: 'image/tiff; application=geotiff',
+          },
+        },
+      };
+
+      const result = getItemBrowseAssets(item);
+      expect(result).toHaveLength(3);
+      expect(result[0].href).toBe('https://example.com/thumb.jpg');
+      expect(result[0].title).toBe('Thumbnail');
+    });
+
+    it('should filter out non-image assets', () => {
+      const item: StacItem = {
+        type: 'Feature',
+        id: 'test-item',
+        geometry: null,
+        properties: {},
+        assets: {
+          thumbnail: {
+            href: 'https://example.com/thumb.jpg',
+            type: 'image/jpeg',
+          },
+          metadata: {
+            href: 'https://example.com/metadata.xml',
+            type: 'application/xml',
+          },
+        },
+      };
+
+      const result = getItemBrowseAssets(item);
+      expect(result).toHaveLength(1);
+      expect(result[0].href).toBe('https://example.com/thumb.jpg');
+    });
+
+    it('should return empty array if no assets', () => {
+      const item: StacItem = {
+        type: 'Feature',
+        id: 'test-item',
+        geometry: null,
+        properties: {},
+      };
+
+      const result = getItemBrowseAssets(item);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should recognize browse and thumbnail content types', () => {
+      const item: StacItem = {
+        type: 'Feature',
+        id: 'test-item',
+        geometry: null,
+        properties: {},
+        assets: {
+          browse: {
+            href: 'https://example.com/browse.jpg',
+            type: 'application/browse',
+          },
+          thumbnail: {
+            href: 'https://example.com/thumb.jpg',
+            type: 'application/thumbnail',
+          },
+        },
+      };
+
+      const result = getItemBrowseAssets(item);
+      expect(result).toHaveLength(2);
     });
   });
 });
