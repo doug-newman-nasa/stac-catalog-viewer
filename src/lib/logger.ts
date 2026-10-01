@@ -54,6 +54,10 @@ class Logger {
   private readonly DB_NAME = 'STACCatalogViewerLogs';
   private readonly STORE_NAME = 'logs';
   private readonly CONFIG_STORE_NAME = 'config';
+  private logWriteQueue: AnyLog[] = [];
+  private isProcessingQueue = false;
+  private lastEnforcementTime = 0;
+  private readonly ENFORCEMENT_INTERVAL = 5000;
 
   private formatLog(entry: AnyLog): string {
     const { timestamp, level, message } = entry;
@@ -191,9 +195,40 @@ class Logger {
       this.logs.shift();
     }
 
-    if (this.config.persistToDisk) {
-      this.persistLogToDisk(entry);
+    if (this.config.persistToDisk && this.db) {
+      this.logWriteQueue.push(entry);
+      this.processWriteQueue();
     }
+  }
+
+  private processWriteQueue(): void {
+    if (this.isProcessingQueue || this.logWriteQueue.length === 0 || !this.db) {
+      return;
+    }
+
+    this.isProcessingQueue = true;
+
+    const logsToWrite = this.logWriteQueue.splice(0, 10);
+
+    this.persistLogsToDisk(logsToWrite)
+      .then(() => {
+        this.isProcessingQueue = false;
+        if (this.logWriteQueue.length > 0) {
+          this.processWriteQueue();
+        }
+
+        const now = Date.now();
+        if (now - this.lastEnforcementTime > this.ENFORCEMENT_INTERVAL) {
+          this.lastEnforcementTime = now;
+          this.enforceMaxLogsOnDisk().catch(err => {
+            console.warn('Failed to enforce max logs on disk:', err);
+          });
+        }
+      })
+      .catch(err => {
+        console.warn('Failed to persist logs to disk:', err);
+        this.isProcessingQueue = false;
+      });
   }
 
   private shouldLog(level: LogLevel): boolean {
@@ -229,35 +264,75 @@ class Logger {
     });
   }
 
-  private persistLogToDisk(entry: AnyLog): void {
-    if (!this.db) return;
+  private persistLogsToDisk(entries: AnyLog[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        resolve();
+        return;
+      }
 
-    const transaction = this.db.transaction([this.STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(this.STORE_NAME);
+      try {
+        const transaction = this.db.transaction([this.STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(this.STORE_NAME);
 
-    store.add({
-      ...entry,
-      id: undefined,
+        for (const entry of entries) {
+          store.add({
+            ...entry,
+            id: undefined,
+          });
+        }
+
+        transaction.onerror = () => reject(transaction.error);
+        transaction.oncomplete = () => resolve();
+      } catch (error) {
+        reject(error);
+      }
     });
-
-    this.enforceMaxLogsOnDisk();
   }
 
-  private enforceMaxLogsOnDisk(): void {
-    if (!this.db) return;
-
-    const transaction = this.db.transaction([this.STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(this.STORE_NAME);
-    const countRequest = store.count();
-
-    countRequest.onsuccess = () => {
-      if (countRequest.result > this.config.maxLogsOnDisk) {
-        const range = IDBKeyRange.upperBound(
-          countRequest.result - this.config.maxLogsOnDisk
-        );
-        store.delete(range);
+  private enforceMaxLogsOnDisk(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        resolve();
+        return;
       }
-    };
+
+      try {
+        const transaction = this.db.transaction([this.STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(this.STORE_NAME);
+        const countRequest = store.count();
+
+        countRequest.onerror = () => reject(countRequest.error);
+        countRequest.onsuccess = () => {
+          try {
+            if (countRequest.result > this.config.maxLogsOnDisk) {
+              const toDelete = countRequest.result - this.config.maxLogsOnDisk;
+              const range = IDBKeyRange.lowerBound(0);
+              const getAllRequest = store.getAll(range, toDelete);
+
+              getAllRequest.onerror = () => reject(getAllRequest.error);
+              getAllRequest.onsuccess = () => {
+                const idsToDelete = (getAllRequest.result as AnyLog[])
+                  .map((_, index) => index + 1);
+
+                for (const id of idsToDelete) {
+                  store.delete(id);
+                }
+
+                transaction.onerror = () => reject(transaction.error);
+                transaction.oncomplete = () => resolve();
+              };
+            } else {
+              resolve();
+            }
+          } catch (error) {
+            reject(error);
+          }
+        };
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
   private loadConfig(): void {
