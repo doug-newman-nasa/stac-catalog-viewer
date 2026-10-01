@@ -156,7 +156,7 @@ describe('CollectionSearch Component', () => {
 
     expect(mockOnSearchParamsChange).toHaveBeenCalledWith(
       expect.objectContaining({
-        bbox: [-10, -10, 10, 10],
+        bboxString: '-10, -10, 10, 10',
       })
     );
   });
@@ -318,9 +318,9 @@ describe('CollectionSearch Component', () => {
     expect(clearButton).toBeDisabled();
   });
 
-  it('should clear bbox when input is emptied', async () => {
+  it('should clear bboxString when input is emptied', async () => {
     const user = userEvent.setup();
-    const searchParams: CollectionSearchParams = { bbox: [-10, -10, 10, 10], limit: 25 };
+    const searchParams: CollectionSearchParams = { bboxString: '-10, -10, 10, 10', limit: 25 };
 
     render(
       <CollectionSearch
@@ -339,7 +339,7 @@ describe('CollectionSearch Component', () => {
 
     expect(mockOnSearchParamsChange).toHaveBeenCalledWith(
       expect.objectContaining({
-        bbox: undefined,
+        bboxString: undefined,
       })
     );
   });
@@ -370,7 +370,7 @@ describe('CollectionSearch Component', () => {
     );
   });
 
-  it('should not update bbox when input has invalid format', () => {
+  it('should update bboxString even with invalid format during input', () => {
     render(
       <CollectionSearch
         searchParams={{ limit: 25 }}
@@ -386,14 +386,14 @@ describe('CollectionSearch Component', () => {
     const bboxInput = screen.getByPlaceholderText(/-180, -90, 180, 90/i) as HTMLInputElement;
     fireEvent.change(bboxInput, { target: { value: 'invalid,bbox,format' } });
 
-    // Should not call onSearchParamsChange since format is invalid
-    const callsWithBbox = mockOnSearchParamsChange.mock.calls.filter(call =>
-      call[0].bbox !== undefined
+    // Should update bboxString even if format is invalid (validation happens on search)
+    const callsWithBboxString = mockOnSearchParamsChange.mock.calls.filter(call =>
+      call[0].bboxString !== undefined
     );
-    expect(callsWithBbox).toHaveLength(0);
+    expect(callsWithBboxString.length).toBeGreaterThan(0);
   });
 
-  it('should not update bbox when input has less than 4 coordinates', () => {
+  it('should update bboxString even with less than 4 coordinates during input', () => {
     render(
       <CollectionSearch
         searchParams={{ limit: 25 }}
@@ -409,14 +409,14 @@ describe('CollectionSearch Component', () => {
     const bboxInput = screen.getByPlaceholderText(/-180, -90, 180, 90/i) as HTMLInputElement;
     fireEvent.change(bboxInput, { target: { value: '-10, -10, 10' } });
 
-    // Should not call onSearchParamsChange with bbox since it doesn't have 4 values
-    const callsWithBbox = mockOnSearchParamsChange.mock.calls.filter(call =>
-      call[0].bbox !== undefined
+    // Should update bboxString even if incomplete (validation happens on search)
+    const callsWithBboxString = mockOnSearchParamsChange.mock.calls.filter(call =>
+      call[0].bboxString !== undefined
     );
-    expect(callsWithBbox).toHaveLength(0);
+    expect(callsWithBboxString.length).toBeGreaterThan(0);
   });
 
-  it('should update bbox with valid coordinates with extra whitespace', () => {
+  it('should update bboxString with valid coordinates with extra whitespace', () => {
     render(
       <CollectionSearch
         searchParams={{ limit: 25 }}
@@ -434,7 +434,7 @@ describe('CollectionSearch Component', () => {
 
     expect(mockOnSearchParamsChange).toHaveBeenCalledWith(
       expect.objectContaining({
-        bbox: [-10, -10, 10, 10],
+        bboxString: ' -10 , -10 , 10 , 10 ',
       })
     );
   });

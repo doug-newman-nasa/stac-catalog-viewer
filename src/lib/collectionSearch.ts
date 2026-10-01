@@ -3,6 +3,7 @@ import { logger } from './logger';
 
 export interface CollectionSearchParams {
   bbox?: [number, number, number, number]; // [west, south, east, north]
+  bboxString?: string; // Raw bbox input string for display
   datetime?: string; // ISO 8601 interval: start/end, start/, /end, or single datetime
   limit?: number;
   q?: string; // Free-text search

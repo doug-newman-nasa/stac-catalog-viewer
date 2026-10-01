@@ -23,20 +23,28 @@ export function CollectionSearch({
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(searchParams);
+
+    const searchParamsToSend = { ...searchParams };
+
+    // Parse bbox string if present
+    if (searchParamsToSend.bboxString) {
+      const parts = searchParamsToSend.bboxString.split(',').map((v) => parseFloat(v.trim()));
+      if (parts.length === 4 && parts.every((p) => !isNaN(p))) {
+        searchParamsToSend.bbox = parts as [number, number, number, number];
+      } else {
+        // Invalid bbox format, don't search
+        return;
+      }
+    } else {
+      searchParamsToSend.bbox = undefined;
+    }
+
+    onSearch(searchParamsToSend);
   };
 
   const handleBboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (!value) {
-      onSearchParamsChange({ ...searchParams, bbox: undefined });
-      return;
-    }
-
-    const parts = value.split(',').map((v) => parseFloat(v.trim()));
-    if (parts.length === 4 && parts.every((p) => !isNaN(p))) {
-      onSearchParamsChange({ ...searchParams, bbox: parts as [number, number, number, number] });
-    }
+    onSearchParamsChange({ ...searchParams, bboxString: value || undefined });
   };
 
   const handleTextSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +75,7 @@ export function CollectionSearch({
     onClearSearch();
   };
 
-  const bboxValue = searchParams.bbox ? searchParams.bbox.join(', ') : '';
+  const bboxValue = searchParams.bboxString || '';
 
   return (
     <div className="collection-search">
@@ -141,7 +149,7 @@ export function CollectionSearch({
           <button type="submit" disabled={loading} className="search-button">
             {loading ? 'Searching...' : 'Search Collections'}
           </button>
-          {(searchParams.q || searchParams.bbox || searchParams.datetime) && (
+          {(searchParams.q || searchParams.bbox || searchParams.bboxString || searchParams.datetime) && (
             <button
               type="button"
               onClick={handleClearAll}
@@ -157,6 +165,12 @@ export function CollectionSearch({
       {error && (
         <div className="error-message">
           <strong>Error:</strong> {error.message}
+        </div>
+      )}
+
+      {searchParams.bboxString && !searchParams.bbox && (
+        <div className="error-message">
+          <strong>Invalid bounding box:</strong> Please enter 4 comma-separated numbers (W, S, E, N)
         </div>
       )}
     </div>
