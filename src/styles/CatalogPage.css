@@ -504,3 +504,30 @@
   cursor: not-allowed;
   color: #ccc;
 }
+
+.item-card {
+  padding: 16px;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  background: white;
+  transition: all 0.2s;
+}
+
+.item-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.item-card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.item-card-header .item-link-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+}
