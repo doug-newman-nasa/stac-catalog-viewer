@@ -208,14 +208,16 @@ export function CatalogPage() {
         {keywords.length > 0 && <KeywordsDisplay keywords={keywords} />}
       </div>
 
-      <CollectionSearch
-        searchParams={collectionSearchParams}
-        onSearchParamsChange={setCollectionSearchParams}
-        onSearch={handleCollectionSearch}
-        onClearSearch={handleCollectionSearchClear}
-        loading={collectionSearchLoading}
-        error={collectionSearchError}
-      />
+      {!itemsSearchLink && itemLinks.length === 0 && (
+        <CollectionSearch
+          searchParams={collectionSearchParams}
+          onSearchParamsChange={setCollectionSearchParams}
+          onSearch={handleCollectionSearch}
+          onClearSearch={handleCollectionSearchClear}
+          loading={collectionSearchLoading}
+          error={collectionSearchError}
+        />
+      )}
 
       {(collectionSearchResults.length > 0 || collectionSearchLoading) && (
         <div className="section">

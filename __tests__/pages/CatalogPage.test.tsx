@@ -29,6 +29,18 @@ const mockCatalog: StacCatalog = {
   ],
 };
 
+const mockCatalogWithoutItems: StacCatalog = {
+  type: 'Catalog',
+  stac_version: '1.0.0',
+  id: 'test-catalog',
+  title: 'Test Catalog',
+  description: 'A test catalog',
+  links: [
+    { rel: 'child', href: 'child1.json', title: 'Child 1' },
+    { rel: 'child', href: 'child2.json', title: 'Child 2' },
+  ],
+};
+
 const mockItemsSearchDefault = {
   items: [],
   loading: false,
@@ -2128,7 +2140,7 @@ describe('CatalogPage', () => {
 
   it('should render CollectionSearch component', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2144,7 +2156,7 @@ describe('CatalogPage', () => {
 
   it('should render search form in CollectionSearch', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2166,7 +2178,7 @@ describe('CatalogPage', () => {
 
   it('should render advanced filters button in CollectionSearch', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2183,7 +2195,7 @@ describe('CatalogPage', () => {
 
   it('should display collection search form with correct props', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2213,7 +2225,7 @@ describe('CatalogPage', () => {
     ];
 
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2232,7 +2244,7 @@ describe('CatalogPage', () => {
 
   it('should hide child catalogs when collection search results exist', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2389,7 +2401,7 @@ describe('CatalogPage', () => {
 
   it('should display URL toggle button', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2406,7 +2418,7 @@ describe('CatalogPage', () => {
   it('should toggle URL visibility', async () => {
     const user = userEvent.setup();
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2430,7 +2442,7 @@ describe('CatalogPage', () => {
     const user = userEvent.setup();
 
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2449,7 +2461,7 @@ describe('CatalogPage', () => {
 
   it('should render search form on catalog page', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2493,7 +2505,7 @@ describe('CatalogPage', () => {
 
   it('should display header with page controls', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2534,7 +2546,7 @@ describe('CatalogPage', () => {
   it('should handle collection search and display results', async () => {
     const user = userEvent.setup();
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2552,7 +2564,7 @@ describe('CatalogPage', () => {
 
   it('should clear child catalogs when collection search results are displayed', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2568,7 +2580,7 @@ describe('CatalogPage', () => {
 
   it('should display "Search Results" section when search results exist', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2585,7 +2597,7 @@ describe('CatalogPage', () => {
 
   it('should render search results with pagination when results exceed page size', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2602,7 +2614,7 @@ describe('CatalogPage', () => {
   it('should handle collection selection from search results', async () => {
     const user = userEvent.setup();
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2620,7 +2632,7 @@ describe('CatalogPage', () => {
 
   it('should show search error message when collection search fails', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2639,7 +2651,7 @@ describe('CatalogPage', () => {
   it('should handle collection search page size change', async () => {
     const user = userEvent.setup();
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2658,7 +2670,7 @@ describe('CatalogPage', () => {
 
   it('should handle catalog with search results and child catalogs', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2737,7 +2749,6 @@ describe('CatalogPage', () => {
       description: 'A test catalog',
       links: [
         { rel: 'child', href: 'child1.json', title: 'Child 1' },
-        { rel: 'item', href: 'item1.json', title: 'Item 1' },
       ],
     };
 
@@ -2758,7 +2769,7 @@ describe('CatalogPage', () => {
 
   it('should display advanced filters toggle in collection search', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2775,7 +2786,7 @@ describe('CatalogPage', () => {
   it('should handle collection search clear results', async () => {
     const user = userEvent.setup();
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2793,7 +2804,7 @@ describe('CatalogPage', () => {
 
   it('should render collection search with correct props from CatalogPage', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2898,7 +2909,7 @@ describe('CatalogPage', () => {
 
   it('should display search loading state', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -2984,7 +2995,7 @@ describe('CatalogPage', () => {
     });
 
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
@@ -3009,7 +3020,7 @@ describe('CatalogPage', () => {
 
   it('should render child catalog links as proper anchor tags', () => {
     vi.mocked(useStacNode).mockReturnValue({
-      data: mockCatalog,
+      data: mockCatalogWithoutItems,
       loading: false,
       error: null,
       retry: vi.fn(),
