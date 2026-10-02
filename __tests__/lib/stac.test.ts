@@ -1046,6 +1046,14 @@ describe('stac utilities', () => {
       expect(isCatalog(catalog as any)).toBe(true);
     });
 
+    it('should identify a catalog without id field', () => {
+      const catalog = {
+        description: 'Test catalog',
+        links: [{ rel: 'child', href: 'child.json' }],
+      };
+      expect(isCatalog(catalog as any)).toBe(true);
+    });
+
     it('should identify a catalog without description', () => {
       const catalog = {
         type: 'Catalog',
@@ -1065,8 +1073,8 @@ describe('stac utilities', () => {
     });
 
     it('should reject objects missing required fields', () => {
-      expect(isCatalog({ type: 'Catalog' })).toBe(false); // no links or id
-      expect(isCatalog({ links: [] })).toBe(false); // no id
+      expect(isCatalog({ type: 'Catalog' })).toBe(false); // no links
+      expect(isCatalog({ links: [] })).toBe(true); // links are sufficient
       expect(isCatalog({ id: 'test' })).toBe(false); // no links
       expect(isCatalog({})).toBe(false);
       expect(isCatalog(null)).toBe(false);
@@ -1174,9 +1182,8 @@ describe('stac utilities', () => {
       ).rejects.toThrow(/Invalid STAC resource/);
     });
 
-    it('should treat response as catalog fallback if it has id and links', async () => {
+    it('should treat response as catalog fallback if it has links', async () => {
       const fallbackCatalog = {
-        id: 'test-catalog',
         links: [{ rel: 'child', href: 'child.json' }],
       };
 

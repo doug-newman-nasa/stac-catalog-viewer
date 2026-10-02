@@ -82,11 +82,10 @@ export function isCatalog(data: unknown): data is StacCatalog {
   // A catalog must have links and should have a type that's not FeatureCollection
   // Some implementations may have relaxed type validation
   const hasLinks = Array.isArray(obj.links);
-  const hasId = typeof obj.id === 'string';
   const isNotFeatureCollection = !obj.type || obj.type !== 'FeatureCollection';
   const notAnItem = obj.type !== 'Feature';
 
-  return hasLinks && hasId && isNotFeatureCollection && notAnItem;
+  return hasLinks && isNotFeatureCollection && notAnItem;
 }
 
 export function isItemCollection(data: unknown): data is StacItemCollection {
@@ -124,10 +123,10 @@ export async function fetchStacResource(url: string): Promise<StacResource> {
       return data as StacCatalog;
     } else if (isItemCollection(data)) {
       return data as StacItemCollection;
-    } else if (Array.isArray(data?.links) && typeof data.id === 'string') {
-      // Fallback: treat any object with 'links' array and 'id' as a catalog
-      // This handles non-compliant STAC implementations
-      logger.logInfo('Treating response as catalog fallback', { url, hasLinks: true, hasId: true });
+    } else if (Array.isArray(data?.links)) {
+      // Fallback: treat any object with 'links' array as a catalog
+      // This handles non-compliant STAC implementations that may not have id or type
+      logger.logInfo('Treating response as catalog fallback', { url, hasLinks: true });
       return data as StacCatalog;
     } else {
       const dataKeys = data && typeof data === 'object' ? Object.keys(data).slice(0, 10).join(', ') : 'N/A';
