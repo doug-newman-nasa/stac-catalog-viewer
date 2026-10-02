@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, withLimit, fetchItemCollection, resolveHref, getItemBrowseLinks, getItemBrowseAssets } from '../../src/lib/stac';
+import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, withLimit, fetchItemCollection, resolveHref, getItemBrowseLinks, getItemBrowseAssets, getOtherLinks, getItemOtherLinks } from '../../src/lib/stac';
 import type { StacCatalog, StacItem } from '../../src/types/stac';
 
 describe('stac utilities', () => {
@@ -781,6 +781,157 @@ describe('stac utilities', () => {
 
       const result = getItemBrowseAssets(item);
       expect(result).toHaveLength(2);
+    });
+  });
+
+  describe('getOtherLinks', () => {
+    it('should filter out excluded rel types', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [
+          { rel: 'self', href: 'https://example.com/self' },
+          { rel: 'root', href: 'https://example.com/root' },
+          { rel: 'parent', href: 'https://example.com/parent' },
+          { rel: 'items', href: 'https://example.com/items' },
+          { rel: 'via', href: 'https://example.com/via' },
+          { rel: 'derived_from', href: 'https://example.com/derived' },
+        ],
+      };
+
+      const result = getOtherLinks(catalog);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].rel).toBe('via');
+      expect(result[1].rel).toBe('derived_from');
+    });
+
+    it('should include other link types', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [
+          { rel: 'child', href: 'https://example.com/child' },
+          { rel: 'preview', href: 'https://example.com/preview' },
+          { rel: 'alternate', href: 'https://example.com/alternate' },
+        ],
+      };
+
+      const result = getOtherLinks(catalog);
+
+      expect(result).toHaveLength(3);
+      expect(result.map((l) => l.rel)).toContain('child');
+      expect(result.map((l) => l.rel)).toContain('preview');
+      expect(result.map((l) => l.rel)).toContain('alternate');
+    });
+
+    it('should handle empty link list', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [],
+      };
+
+      const result = getOtherLinks(catalog);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle links with only excluded types', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [
+          { rel: 'self', href: 'https://example.com/self' },
+          { rel: 'root', href: 'https://example.com/root' },
+          { rel: 'parent', href: 'https://example.com/parent' },
+          { rel: 'items', href: 'https://example.com/items' },
+        ],
+      };
+
+      const result = getOtherLinks(catalog);
+
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('getItemOtherLinks', () => {
+    it('should filter out excluded rel types from item', () => {
+      const item: StacItem = {
+        type: 'Feature',
+        id: 'test-item',
+        geometry: null,
+        properties: {},
+        links: [
+          { rel: 'self', href: 'https://example.com/self' },
+          { rel: 'root', href: 'https://example.com/root' },
+          { rel: 'parent', href: 'https://example.com/parent' },
+          { rel: 'items', href: 'https://example.com/items' },
+          { rel: 'via', href: 'https://example.com/via' },
+          { rel: 'alternate', href: 'https://example.com/alt' },
+        ],
+      };
+
+      const result = getItemOtherLinks(item);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].rel).toBe('via');
+      expect(result[1].rel).toBe('alternate');
+    });
+
+    it('should handle item without links', () => {
+      const item: StacItem = {
+        type: 'Feature',
+        id: 'test-item',
+        geometry: null,
+        properties: {},
+      };
+
+      const result = getItemOtherLinks(item);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle item with empty links array', () => {
+      const item: StacItem = {
+        type: 'Feature',
+        id: 'test-item',
+        geometry: null,
+        properties: {},
+        links: [],
+      };
+
+      const result = getItemOtherLinks(item);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should include other link types from item', () => {
+      const item: StacItem = {
+        type: 'Feature',
+        id: 'test-item',
+        geometry: null,
+        properties: {},
+        links: [
+          { rel: 'derived_from', href: 'https://example.com/derived' },
+          { rel: 'via', href: 'https://example.com/via', type: 'application/json' },
+        ],
+      };
+
+      const result = getItemOtherLinks(item);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].rel).toBe('derived_from');
+      expect(result[1].rel).toBe('via');
+      expect(result[1].type).toBe('application/json');
     });
   });
 });

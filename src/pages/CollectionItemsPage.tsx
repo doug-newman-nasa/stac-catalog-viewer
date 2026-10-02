@@ -5,7 +5,8 @@ import { ExtentDisplay } from '../components/ExtentDisplay';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
 import { AssetLinks } from '../components/AssetLinks';
 import { StorageDisplay } from '../components/StorageDisplay';
-import { resolveHref, getItemBrowseLinks, getItemBrowseAssets } from '../lib/stac';
+import { LinksDisplay } from '../components/LinksDisplay';
+import { resolveHref, getItemBrowseLinks, getItemBrowseAssets, getItemOtherLinks } from '../lib/stac';
 import { applyItemSearchParams, collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
 import { extractItemExtent } from '../lib/itemExtent';
 import { getTotalPages, PAGE_SIZE_OPTIONS, getPaginatedData } from '../lib/pagination';
@@ -165,6 +166,7 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
                       {itemExtent && <ExtentDisplay extent={itemExtent} />}
                       {item.assets && <AssetLinks assets={item.assets} />}
                       <StorageDisplay data={item} />
+                      <LinksDisplay links={getItemOtherLinks(item)} />
                     </div>
                   );
                 })}

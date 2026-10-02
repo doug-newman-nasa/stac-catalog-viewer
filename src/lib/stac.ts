@@ -149,3 +149,13 @@ export function getItemBrowseAssets(item: StacItem): Array<{ href: string; title
       };
     });
 }
+
+const EXCLUDED_LINK_RELS = ['self', 'root', 'parent', 'items'];
+
+export function getOtherLinks(catalog: StacCatalog): StacLink[] {
+  return catalog.links.filter((link) => !EXCLUDED_LINK_RELS.includes(link.rel));
+}
+
+export function getItemOtherLinks(item: StacItem): StacLink[] {
+  return (item.links || []).filter((link) => !EXCLUDED_LINK_RELS.includes(link.rel));
+}

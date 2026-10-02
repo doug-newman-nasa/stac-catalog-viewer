@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStacNode } from '../hooks/useStacNode';
-import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords } from '../lib/stac';
+import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, getOtherLinks } from '../lib/stac';
 import { ExtentDisplay } from '../components/ExtentDisplay';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
 import { KeywordsDisplay } from '../components/KeywordsDisplay';
 import { AssetLinks } from '../components/AssetLinks';
 import { StorageDisplay } from '../components/StorageDisplay';
+import { LinksDisplay } from '../components/LinksDisplay';
 import { CatalogListingPage } from './CatalogListingPage';
 import { CollectionItemsPage } from './CollectionItemsPage';
 import { CollectionSearchResultsPage } from './CollectionSearchResultsPage';
@@ -88,6 +89,7 @@ export function CatalogPage() {
   const browseLinks = getBrowseLinks(data);
   const browseAssets = getBrowseAssets(data);
   const keywords = getKeywords(data);
+  const otherLinks = getOtherLinks(data);
   const browseImages = [
     ...browseLinks,
     ...browseAssets.map((asset) => ({
@@ -162,6 +164,7 @@ export function CatalogPage() {
         {keywords.length > 0 && <KeywordsDisplay keywords={keywords} />}
         {data.assets && <AssetLinks assets={data.assets} />}
         <StorageDisplay data={data} />
+        <LinksDisplay links={otherLinks} />
       </div>
 
       {!itemsSearchLink && itemLinks.length === 0 && (
