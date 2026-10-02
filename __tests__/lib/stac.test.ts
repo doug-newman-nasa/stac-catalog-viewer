@@ -1037,6 +1037,24 @@ describe('stac utilities', () => {
       expect(isCatalog(catalog)).toBe(true);
     });
 
+    it('should identify a catalog without type field (some APIs omit it)', () => {
+      const catalog = {
+        id: 'test-catalog',
+        description: 'Test',
+        links: [{ rel: 'child', href: 'child.json' }],
+      };
+      expect(isCatalog(catalog as any)).toBe(true);
+    });
+
+    it('should identify a catalog without description', () => {
+      const catalog = {
+        type: 'Catalog',
+        id: 'test-catalog',
+        links: [{ rel: 'child', href: 'child.json' }],
+      };
+      expect(isCatalog(catalog as any)).toBe(true);
+    });
+
     it('should reject a FeatureCollection', () => {
       const featureCollection: StacItemCollection = {
         type: 'FeatureCollection',
@@ -1046,10 +1064,24 @@ describe('stac utilities', () => {
       expect(isCatalog(featureCollection)).toBe(false);
     });
 
-    it('should reject invalid objects', () => {
+    it('should reject objects missing required fields', () => {
+      expect(isCatalog({ type: 'Catalog' })).toBe(false); // no links or id
+      expect(isCatalog({ links: [] })).toBe(false); // no id
+      expect(isCatalog({ id: 'test' })).toBe(false); // no links
       expect(isCatalog({})).toBe(false);
       expect(isCatalog(null)).toBe(false);
       expect(isCatalog(undefined)).toBe(false);
+    });
+
+    it('should reject Feature items', () => {
+      const feature = {
+        type: 'Feature',
+        id: 'test-feature',
+        geometry: null,
+        properties: {},
+        links: [],
+      };
+      expect(isCatalog(feature as any)).toBe(false);
     });
   });
 
@@ -1103,6 +1135,7 @@ describe('stac utilities', () => {
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
+        headers: { get: () => 'application/json' },
         json: async () => mockCatalog,
       });
 
@@ -1120,6 +1153,7 @@ describe('stac utilities', () => {
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
+        headers: { get: () => 'application/json' },
         json: async () => mockCollection,
       });
 
@@ -1131,12 +1165,29 @@ describe('stac utilities', () => {
     it('should throw error on invalid resource', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
+        headers: { get: () => 'application/json' },
         json: async () => ({ id: 'test' }),
       });
 
       await expect(
         fetchStacResource('https://example.com/invalid.json')
       ).rejects.toThrow(/Invalid STAC resource/);
+    });
+
+    it('should treat response as catalog fallback if it has id and links', async () => {
+      const fallbackCatalog = {
+        id: 'test-catalog',
+        links: [{ rel: 'child', href: 'child.json' }],
+      };
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => fallbackCatalog,
+      });
+
+      const result = await fetchStacResource('https://example.com/fallback.json');
+      expect(result).toEqual(fallbackCatalog);
     });
 
     it('should throw error on network failure', async () => {

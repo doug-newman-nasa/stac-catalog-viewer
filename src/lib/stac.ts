@@ -79,12 +79,20 @@ export async function fetchItemCollection(url: string): Promise<StacItemCollecti
 export function isCatalog(data: unknown): data is StacCatalog {
   if (!data || typeof data !== 'object') return false;
   const obj = data as Record<string, unknown>;
-  return typeof obj.type === 'string' && obj.type !== 'FeatureCollection' && Array.isArray(obj.links);
+  // A catalog must have links and should have a type that's not FeatureCollection
+  // Some implementations may have relaxed type validation
+  const hasLinks = Array.isArray(obj.links);
+  const hasId = typeof obj.id === 'string';
+  const isNotFeatureCollection = !obj.type || obj.type !== 'FeatureCollection';
+  const notAnItem = obj.type !== 'Feature';
+
+  return hasLinks && hasId && isNotFeatureCollection && notAnItem;
 }
 
 export function isItemCollection(data: unknown): data is StacItemCollection {
   if (!data || typeof data !== 'object') return false;
   const obj = data as Record<string, unknown>;
+  // A FeatureCollection must have type, features array, and links
   return obj.type === 'FeatureCollection' && Array.isArray(obj.features) && Array.isArray(obj.links);
 }
 
@@ -103,16 +111,37 @@ export async function fetchStacResource(url: string): Promise<StacResource> {
       throw new Error(error);
     }
 
+    let contentType = '';
+    try {
+      contentType = response.headers?.get('content-type') || '';
+    } catch (e) {
+      // headers might not be accessible in some contexts
+    }
     const data = await response.json();
-    logger.logResponse(url, response.status, duration, { dataType: typeof data });
+    logger.logResponse(url, response.status, duration, { dataType: typeof data, contentType });
 
     if (isCatalog(data)) {
       return data as StacCatalog;
     } else if (isItemCollection(data)) {
       return data as StacItemCollection;
+    } else if (Array.isArray(data?.links) && typeof data.id === 'string') {
+      // Fallback: treat any object with 'links' array and 'id' as a catalog
+      // This handles non-compliant STAC implementations
+      logger.logInfo('Treating response as catalog fallback', { url, hasLinks: true, hasId: true });
+      return data as StacCatalog;
     } else {
-      const error = 'Invalid STAC resource: must be a Catalog or FeatureCollection with required fields';
-      logger.logError('Invalid resource response', error, { url, hasType: !!data?.type, hasLinks: Array.isArray(data?.links), hasFeatures: Array.isArray(data?.features) });
+      const dataKeys = data && typeof data === 'object' ? Object.keys(data).slice(0, 10).join(', ') : 'N/A';
+      const error = `Invalid STAC resource at ${url}. Expected a Catalog (with 'id' and 'links') or FeatureCollection (with 'type': 'FeatureCollection', 'features', and 'links'). Received fields: ${dataKeys}`;
+      logger.logError('Invalid resource response', error, {
+        url,
+        hasType: !!data?.type,
+        typeValue: data?.type,
+        hasId: typeof data?.id === 'string',
+        hasLinks: Array.isArray(data?.links),
+        hasFeatures: Array.isArray(data?.features),
+        dataKeys,
+        contentType
+      });
       throw new Error(error);
     }
   } catch (error) {
