@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, withLimit, fetchItemCollection, resolveHref, getItemBrowseLinks, getItemBrowseAssets, getOtherLinks, getItemOtherLinks } from '../../src/lib/stac';
+import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, withLimit, fetchItemCollection, resolveHref, getItemBrowseLinks, getItemBrowseAssets, getOtherLinks, getItemOtherLinks, getParentLink, isCatalog, isItemCollection, fetchStacResource } from '../../src/lib/stac';
 import type { StacCatalog, StacItem } from '../../src/types/stac';
 
 describe('stac utilities', () => {
@@ -46,7 +46,7 @@ describe('stac utilities', () => {
 
       await expect(
         fetchStacCatalog('https://example.com/catalog.json')
-      ).rejects.toThrow('Invalid STAC Catalog: missing type or links');
+      ).rejects.toThrow(/Invalid STAC Catalog:.*The parent URL may not point to a STAC catalog/);
     });
   });
 
@@ -863,6 +863,96 @@ describe('stac utilities', () => {
     });
   });
 
+  describe('getParentLink', () => {
+    it('should return parent link when present', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [
+          { rel: 'child', href: 'https://example.com/child' },
+          { rel: 'parent', href: 'https://example.com/parent', title: 'Parent Catalog' },
+          { rel: 'self', href: 'https://example.com/self' },
+        ],
+      };
+
+      const result = getParentLink(catalog);
+
+      expect(result).toBeDefined();
+      expect(result?.rel).toBe('parent');
+      expect(result?.href).toBe('https://example.com/parent');
+      expect(result?.title).toBe('Parent Catalog');
+    });
+
+    it('should return undefined when no parent link', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [
+          { rel: 'child', href: 'https://example.com/child' },
+          { rel: 'self', href: 'https://example.com/self' },
+        ],
+      };
+
+      const result = getParentLink(catalog);
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should return parent link without title', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [
+          { rel: 'parent', href: 'https://example.com/parent' },
+        ],
+      };
+
+      const result = getParentLink(catalog);
+
+      expect(result).toBeDefined();
+      expect(result?.rel).toBe('parent');
+      expect(result?.href).toBe('https://example.com/parent');
+      expect(result?.title).toBeUndefined();
+    });
+
+    it('should return only the first parent link if multiple exist', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [
+          { rel: 'parent', href: 'https://example.com/parent1' },
+          { rel: 'parent', href: 'https://example.com/parent2' },
+        ],
+      };
+
+      const result = getParentLink(catalog);
+
+      expect(result?.href).toBe('https://example.com/parent1');
+    });
+
+    it('should handle empty link list', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [],
+      };
+
+      const result = getParentLink(catalog);
+
+      expect(result).toBeUndefined();
+    });
+  });
+
   describe('getItemOtherLinks', () => {
     it('should filter out excluded rel types from item', () => {
       const item: StacItem = {
@@ -932,6 +1022,191 @@ describe('stac utilities', () => {
       expect(result[0].rel).toBe('derived_from');
       expect(result[1].rel).toBe('via');
       expect(result[1].type).toBe('application/json');
+    });
+  });
+
+  describe('isCatalog', () => {
+    it('should identify a Catalog', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+      };
+      expect(isCatalog(catalog)).toBe(true);
+    });
+
+    it('should identify a catalog without type field (some APIs omit it)', () => {
+      const catalog = {
+        id: 'test-catalog',
+        description: 'Test',
+        links: [{ rel: 'child', href: 'child.json' }],
+      };
+      expect(isCatalog(catalog as any)).toBe(true);
+    });
+
+    it('should identify a catalog without id field', () => {
+      const catalog = {
+        description: 'Test catalog',
+        links: [{ rel: 'child', href: 'child.json' }],
+      };
+      expect(isCatalog(catalog as any)).toBe(true);
+    });
+
+    it('should identify a catalog without description', () => {
+      const catalog = {
+        type: 'Catalog',
+        id: 'test-catalog',
+        links: [{ rel: 'child', href: 'child.json' }],
+      };
+      expect(isCatalog(catalog as any)).toBe(true);
+    });
+
+    it('should reject a FeatureCollection', () => {
+      const featureCollection: StacItemCollection = {
+        type: 'FeatureCollection',
+        features: [],
+        links: [],
+      };
+      expect(isCatalog(featureCollection)).toBe(false);
+    });
+
+    it('should reject objects missing required fields', () => {
+      expect(isCatalog({ type: 'Catalog' })).toBe(false); // no links
+      expect(isCatalog({ links: [] })).toBe(true); // links are sufficient
+      expect(isCatalog({ id: 'test' })).toBe(false); // no links
+      expect(isCatalog({})).toBe(false);
+      expect(isCatalog(null)).toBe(false);
+      expect(isCatalog(undefined)).toBe(false);
+    });
+
+    it('should reject Feature items', () => {
+      const feature = {
+        type: 'Feature',
+        id: 'test-feature',
+        geometry: null,
+        properties: {},
+        links: [],
+      };
+      expect(isCatalog(feature as any)).toBe(false);
+    });
+  });
+
+  describe('isItemCollection', () => {
+    it('should identify a FeatureCollection with features and links', () => {
+      const collection: StacItemCollection = {
+        type: 'FeatureCollection',
+        features: [],
+        links: [],
+      };
+      expect(isItemCollection(collection)).toBe(true);
+    });
+
+    it('should reject a Catalog', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+      };
+      expect(isItemCollection(catalog)).toBe(false);
+    });
+
+    it('should reject objects missing features array', () => {
+      const incomplete = {
+        type: 'FeatureCollection',
+        links: [],
+      };
+      expect(isItemCollection(incomplete as any)).toBe(false);
+    });
+
+    it('should reject objects missing links array', () => {
+      const incomplete = {
+        type: 'FeatureCollection',
+        features: [],
+      };
+      expect(isItemCollection(incomplete as any)).toBe(false);
+    });
+  });
+
+  describe('fetchStacResource', () => {
+    it('should fetch and return a Catalog', async () => {
+      const mockCatalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [],
+      };
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => mockCatalog,
+      });
+
+      const result = await fetchStacResource('https://example.com/catalog.json');
+      expect(result).toEqual(mockCatalog);
+      expect(isCatalog(result)).toBe(true);
+    });
+
+    it('should fetch and return a FeatureCollection', async () => {
+      const mockCollection: StacItemCollection = {
+        type: 'FeatureCollection',
+        features: [],
+        links: [],
+      };
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => mockCollection,
+      });
+
+      const result = await fetchStacResource('https://example.com/collections.json');
+      expect(result).toEqual(mockCollection);
+      expect(isItemCollection(result)).toBe(true);
+    });
+
+    it('should throw error on invalid resource', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ id: 'test' }),
+      });
+
+      await expect(
+        fetchStacResource('https://example.com/invalid.json')
+      ).rejects.toThrow(/Invalid STAC resource/);
+    });
+
+    it('should treat response as catalog fallback if it has links', async () => {
+      const fallbackCatalog = {
+        links: [{ rel: 'child', href: 'child.json' }],
+      };
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => fallbackCatalog,
+      });
+
+      const result = await fetchStacResource('https://example.com/fallback.json');
+      expect(result).toEqual(fallbackCatalog);
+    });
+
+    it('should throw error on network failure', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+      });
+
+      await expect(
+        fetchStacResource('https://example.com/notfound.json')
+      ).rejects.toThrow('HTTP 404: Not Found');
     });
   });
 });

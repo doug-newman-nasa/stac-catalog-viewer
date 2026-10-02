@@ -531,3 +531,86 @@
   font-weight: 500;
   color: #333;
 }
+
+.collections-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.collection-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.collection-card {
+  padding: 16px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background: white;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.collection-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.collection-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.collection-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.collection-id {
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  color: #666;
+  padding: 4px 8px;
+  background: #f5f5f5;
+  border-radius: 3px;
+  width: fit-content;
+}
+
+.collection-description {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.view-collection-button {
+  padding: 10px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: auto;
+}
+
+.view-collection-button:hover {
+  background: #764ba2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
+}
+
+@media (max-width: 768px) {
+  .collection-list {
+    grid-template-columns: 1fr;
+  }
+}

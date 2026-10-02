@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStacNode } from '../hooks/useStacNode';
-import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, getOtherLinks } from '../lib/stac';
+import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, getOtherLinks, getParentLink, resolveHref, isCatalog } from '../lib/stac';
 import { ExtentDisplay } from '../components/ExtentDisplay';
 import { LicenseDisplay } from '../components/LicenseDisplay';
+import { ParentNavigation } from '../components/ParentNavigation';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
 import { KeywordsDisplay } from '../components/KeywordsDisplay';
 import { AssetLinks } from '../components/AssetLinks';
@@ -13,6 +14,7 @@ import { CatalogListingPage } from './CatalogListingPage';
 import { CollectionItemsPage } from './CollectionItemsPage';
 import { CollectionSearchResultsPage } from './CollectionSearchResultsPage';
 import type { CollectionSearchParams } from '../lib/collectionSearch';
+import type { StacItemCollection } from '../types/stac';
 import '../styles/CatalogPage.css';
 
 export function CatalogPage() {
@@ -28,7 +30,7 @@ export function CatalogPage() {
 
   const { data, loading, error, retry } = useStacNode(url || '');
 
-  const itemsSearchLink = data ? getItemsLink(data) : undefined;
+  const parentLink = data && isCatalog(data) ? getParentLink(data) : undefined;
 
   const copyUrlToClipboard = () => {
     if (url) {
@@ -43,6 +45,11 @@ export function CatalogPage() {
       setCollectionSearchParams(params);
     }
     navigate(`/catalog?url=${encodeURIComponent(targetUrl)}`);
+  };
+
+  const handleNavigateToParent = (parentHref: string) => {
+    const resolvedParentUrl = resolveHref(url!, parentHref);
+    navigate(`/catalog?url=${encodeURIComponent(resolvedParentUrl)}`);
   };
 
 
@@ -85,12 +92,15 @@ export function CatalogPage() {
     return null;
   }
 
-  const childLinks = getChildLinks(data);
-  const itemLinks = getItemLinks(data);
-  const browseLinks = getBrowseLinks(data);
-  const browseAssets = getBrowseAssets(data);
-  const keywords = getKeywords(data);
-  const otherLinks = getOtherLinks(data);
+  const isCollectionsEndpoint = !isCatalog(data);
+  const catalog = isCatalog(data) ? data : null;
+  const childLinks = catalog ? getChildLinks(catalog) : [];
+  const itemLinks = catalog ? getItemLinks(catalog) : [];
+  const itemsSearchLink = catalog ? getItemsLink(catalog) : undefined;
+  const browseLinks = catalog ? getBrowseLinks(catalog) : [];
+  const browseAssets = catalog ? getBrowseAssets(catalog) : [];
+  const keywords = catalog ? getKeywords(catalog) : [];
+  const otherLinks = catalog ? getOtherLinks(catalog) : (data as StacItemCollection).links.filter((link) => !['self', 'root', 'parent', 'items', 'child', 'next', 'prev', 'data'].includes(link.rel));
   const browseImages = [
     ...browseLinks,
     ...browseAssets.map((asset) => ({
@@ -132,58 +142,107 @@ export function CatalogPage() {
         </div>
       )}
 
-      <div className="catalog-card">
-        <div className="catalog-header">
-          <div className="catalog-info">
-            <h2 className="catalog-title">
-              {data.title || data.id}
-              {data.id && data.id !== data.title && (
-                <code className="catalog-id">{data.id}</code>
-              )}
-            </h2>
-            {data.description && (
-              <p className="catalog-description">{data.description}</p>
-            )}
-            {(childLinks.length > 0 || itemLinks.length > 0) && (
-              <div className="catalog-stats">
-                {childLinks.length > 0 && (
-                  <span className="stat">
-                    📁 {childLinks.length} child{childLinks.length !== 1 ? 'ren' : ''}
-                  </span>
-                )}
-                {itemLinks.length > 0 && (
-                  <span className="stat">
-                    📄 {itemLinks.length} item{itemLinks.length !== 1 ? 's' : ''}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-        {data.license && <LicenseDisplay license={data.license} />}
-        {data.extent && <ExtentDisplay extent={data.extent} />}
-        {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} baseUrl={url} />}
-        {keywords.length > 0 && <KeywordsDisplay keywords={keywords} />}
-        {data.assets && <AssetLinks assets={data.assets} />}
-        <StorageDisplay data={data} />
-        <LinksDisplay links={otherLinks} />
-      </div>
-
-      {!itemsSearchLink && itemLinks.length === 0 && (
-        <CollectionSearchResultsPage
-          url={url}
-          catalogData={data}
-          onNavigateToCollection={handleNavigateToCollection}
-          onResultsChange={setHasCollectionSearchResults}
+      {parentLink && data && (
+        <ParentNavigation
+          parentLink={parentLink}
+          onNavigate={handleNavigateToParent}
         />
       )}
 
-      {!hasCollectionSearchResults && childLinks.length > 0 && (
-        <CatalogListingPage url={url} childLinks={childLinks} />
-      )}
+      {isCollectionsEndpoint ? (
+        <div className="collections-container">
+          <div className="section">
+            <div className="section-header">
+              <h3 className="section-title">Collections</h3>
+            </div>
+            <div className="collection-list">
+              {(data as StacItemCollection).features.map((collection: any) => {
+                const collectionLinks = Array.isArray(collection.links) ? collection.links : [];
+                const collectionSelfLink = collectionLinks.find((link: any) => link.rel === 'self' || link.rel === 'alternate');
+                const collectionUrl = collectionSelfLink ? resolveHref(url!, collectionSelfLink.href) : url!;
 
-      {(itemLinks.length > 0 || itemsSearchLink) && (
-        <CollectionItemsPage url={url} itemLinks={itemLinks} itemsSearchLink={itemsSearchLink} collectionSearchParams={collectionSearchParams} />
+                return (
+                  <div key={collection.id} className="collection-card">
+                    <div className="collection-header">
+                      <h4 className="collection-title">
+                        {collection.title || collection.id}
+                      </h4>
+                      {collection.id && collection.id !== collection.title && (
+                        <code className="collection-id">{collection.id}</code>
+                      )}
+                    </div>
+                    {collection.description && (
+                      <p className="collection-description">{collection.description}</p>
+                    )}
+                    <button
+                      onClick={() => handleNavigateToCollection(collectionUrl)}
+                      className="view-collection-button"
+                    >
+                      View Collection
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {otherLinks.length > 0 && <LinksDisplay links={otherLinks} />}
+        </div>
+      ) : (
+        <>
+          <div className="catalog-card">
+            <div className="catalog-header">
+              <div className="catalog-info">
+                <h2 className="catalog-title">
+                  {catalog?.title || catalog?.id}
+                  {catalog?.id && catalog?.id !== catalog?.title && (
+                    <code className="catalog-id">{catalog?.id}</code>
+                  )}
+                </h2>
+                {catalog?.description && (
+                  <p className="catalog-description">{catalog?.description}</p>
+                )}
+                {(childLinks.length > 0 || itemLinks.length > 0) && (
+                  <div className="catalog-stats">
+                    {childLinks.length > 0 && (
+                      <span className="stat">
+                        📁 {childLinks.length} child{childLinks.length !== 1 ? 'ren' : ''}
+                      </span>
+                    )}
+                    {itemLinks.length > 0 && (
+                      <span className="stat">
+                        📄 {itemLinks.length} item{itemLinks.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            {catalog?.license && <LicenseDisplay license={catalog.license} />}
+            {catalog?.extent && <ExtentDisplay extent={catalog.extent} />}
+            {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} baseUrl={url} />}
+            {keywords.length > 0 && <KeywordsDisplay keywords={keywords} />}
+            {catalog?.assets && <AssetLinks assets={catalog.assets} />}
+            <StorageDisplay data={catalog!} />
+            <LinksDisplay links={otherLinks} />
+          </div>
+
+          {!itemsSearchLink && itemLinks.length === 0 && catalog && (
+            <CollectionSearchResultsPage
+              url={url}
+              catalogData={catalog}
+              onNavigateToCollection={handleNavigateToCollection}
+              onResultsChange={setHasCollectionSearchResults}
+            />
+          )}
+
+          {!hasCollectionSearchResults && childLinks.length > 0 && (
+            <CatalogListingPage url={url} childLinks={childLinks} />
+          )}
+
+          {(itemLinks.length > 0 || itemsSearchLink) && (
+            <CollectionItemsPage url={url} itemLinks={itemLinks} itemsSearchLink={itemsSearchLink} collectionSearchParams={collectionSearchParams} />
+          )}
+        </>
       )}
     </div>
   );
