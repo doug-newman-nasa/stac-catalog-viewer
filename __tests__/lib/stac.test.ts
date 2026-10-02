@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, withLimit, fetchItemCollection, resolveHref, getItemBrowseLinks, getItemBrowseAssets, getOtherLinks, getItemOtherLinks } from '../../src/lib/stac';
+import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, withLimit, fetchItemCollection, resolveHref, getItemBrowseLinks, getItemBrowseAssets, getOtherLinks, getItemOtherLinks, getParentLink } from '../../src/lib/stac';
 import type { StacCatalog, StacItem } from '../../src/types/stac';
 
 describe('stac utilities', () => {
@@ -860,6 +860,96 @@ describe('stac utilities', () => {
       const result = getOtherLinks(catalog);
 
       expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('getParentLink', () => {
+    it('should return parent link when present', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [
+          { rel: 'child', href: 'https://example.com/child' },
+          { rel: 'parent', href: 'https://example.com/parent', title: 'Parent Catalog' },
+          { rel: 'self', href: 'https://example.com/self' },
+        ],
+      };
+
+      const result = getParentLink(catalog);
+
+      expect(result).toBeDefined();
+      expect(result?.rel).toBe('parent');
+      expect(result?.href).toBe('https://example.com/parent');
+      expect(result?.title).toBe('Parent Catalog');
+    });
+
+    it('should return undefined when no parent link', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [
+          { rel: 'child', href: 'https://example.com/child' },
+          { rel: 'self', href: 'https://example.com/self' },
+        ],
+      };
+
+      const result = getParentLink(catalog);
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should return parent link without title', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [
+          { rel: 'parent', href: 'https://example.com/parent' },
+        ],
+      };
+
+      const result = getParentLink(catalog);
+
+      expect(result).toBeDefined();
+      expect(result?.rel).toBe('parent');
+      expect(result?.href).toBe('https://example.com/parent');
+      expect(result?.title).toBeUndefined();
+    });
+
+    it('should return only the first parent link if multiple exist', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [
+          { rel: 'parent', href: 'https://example.com/parent1' },
+          { rel: 'parent', href: 'https://example.com/parent2' },
+        ],
+      };
+
+      const result = getParentLink(catalog);
+
+      expect(result?.href).toBe('https://example.com/parent1');
+    });
+
+    it('should handle empty link list', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [],
+      };
+
+      const result = getParentLink(catalog);
+
+      expect(result).toBeUndefined();
     });
   });
 
