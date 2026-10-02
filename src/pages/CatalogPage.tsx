@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStacNode } from '../hooks/useStacNode';
-import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, getOtherLinks } from '../lib/stac';
+import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, getOtherLinks, getParentLink, resolveHref } from '../lib/stac';
 import { ExtentDisplay } from '../components/ExtentDisplay';
 import { LicenseDisplay } from '../components/LicenseDisplay';
+import { ParentNavigation } from '../components/ParentNavigation';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
 import { KeywordsDisplay } from '../components/KeywordsDisplay';
 import { AssetLinks } from '../components/AssetLinks';
@@ -29,6 +30,7 @@ export function CatalogPage() {
   const { data, loading, error, retry } = useStacNode(url || '');
 
   const itemsSearchLink = data ? getItemsLink(data) : undefined;
+  const parentLink = data ? getParentLink(data) : undefined;
 
   const copyUrlToClipboard = () => {
     if (url) {
@@ -43,6 +45,11 @@ export function CatalogPage() {
       setCollectionSearchParams(params);
     }
     navigate(`/catalog?url=${encodeURIComponent(targetUrl)}`);
+  };
+
+  const handleNavigateToParent = (parentHref: string) => {
+    const resolvedParentUrl = resolveHref(url!, parentHref);
+    navigate(`/catalog?url=${encodeURIComponent(resolvedParentUrl)}`);
   };
 
 
@@ -130,6 +137,13 @@ export function CatalogPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {parentLink && data && (
+        <ParentNavigation
+          parentLink={parentLink}
+          onNavigate={handleNavigateToParent}
+        />
       )}
 
       <div className="catalog-card">

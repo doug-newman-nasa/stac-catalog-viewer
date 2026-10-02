@@ -90,6 +90,10 @@ export function getSearchLink(catalog: StacCatalog | undefined): StacLink | unde
   return catalog.links.find((link) => link.rel === 'search' || link.rel === 'data');
 }
 
+export function getParentLink(catalog: StacCatalog): StacLink | undefined {
+  return catalog.links.find((link) => link.rel === 'parent');
+}
+
 export function getBrowseLinks(catalog: StacCatalog): StacLink[] {
   return catalog.links.filter((link) => link.rel === 'preview' || link.rel === 'browse');
 }
