@@ -823,8 +823,8 @@ describe('stac utilities', () => {
 
       const result = getOtherLinks(catalog);
 
-      expect(result).toHaveLength(3);
-      expect(result.map((l) => l.rel)).toContain('child');
+      expect(result).toHaveLength(2);
+      expect(result.map((l) => l.rel)).not.toContain('child');
       expect(result.map((l) => l.rel)).toContain('preview');
       expect(result.map((l) => l.rel)).toContain('alternate');
     });
