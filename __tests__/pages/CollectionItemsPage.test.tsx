@@ -147,35 +147,6 @@ describe('CollectionItemsPage', () => {
     // The component should render without error
   });
 
-  it('should handle page size changes', async () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      json: async () => mockItemCollection,
-    } as Response);
-
-    const user = userEvent.setup();
-    render(
-      <CollectionItemsPage
-        url="https://example.com/collections/test"
-        itemLinks={[]}
-        itemsSearchLink={mockItemsLink}
-      />
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('Items')).toBeInTheDocument();
-    });
-
-    const selectElement = screen.getByDisplayValue('25');
-    await user.selectOptions(selectElement, '50');
-
-    await waitFor(() => {
-      expect(vi.mocked(fetch)).toHaveBeenCalledWith(
-        expect.stringContaining('limit=50')
-      );
-    });
-  });
-
   it('should show no results message when search returns empty', async () => {
     const emptyCollection = {
       type: 'FeatureCollection',

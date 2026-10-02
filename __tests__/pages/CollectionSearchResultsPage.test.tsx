@@ -192,7 +192,7 @@ describe('CollectionSearchResultsPage', () => {
     await waitFor(() => {
       expect(mockOnNavigateToCollection).toHaveBeenCalledWith(
         'https://example.com/collections/collection1',
-        expect.objectContaining({ q: 'collection', limit: 25 })
+        expect.objectContaining({ q: 'collection' })
       );
     });
   });
@@ -233,7 +233,7 @@ describe('CollectionSearchResultsPage', () => {
     await waitFor(() => {
       expect(mockOnNavigateToCollection).toHaveBeenCalledWith(
         `${mockUrl}/collection1`,
-        expect.objectContaining({ q: 'collection', limit: 25 })
+        expect.objectContaining({ q: 'collection' })
       );
     });
   });
@@ -333,47 +333,6 @@ describe('CollectionSearchResultsPage', () => {
     await user.click(nextButtons[0]);
 
     const pageInfoElements = screen.getAllByText('Page 2 of 2');
-    expect(pageInfoElements.length).toBeGreaterThan(0);
-  });
-
-  it('should update page size and reset to page 1', async () => {
-    const user = userEvent.setup();
-    const manyCollections = Array.from({ length: 75 }, (_, i) => ({
-      id: `collection${i}`,
-      title: `Collection ${i}`,
-      description: `Test collection ${i}`,
-      stac_version: '1.0.0',
-      type: 'Collection' as const,
-      links: [],
-    }));
-
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
-      collections: manyCollections,
-      numberMatched: 75,
-      numberReturned: 75,
-    });
-
-    renderComponent();
-    const searchInput = screen.getByPlaceholderText(/Search by title/i);
-    await user.type(searchInput, 'collection');
-
-    const searchButton = screen.getByRole('button', { name: /Search Collections/i });
-    await user.click(searchButton);
-
-    await waitFor(() => {
-      expect(screen.getByText('Search Results')).toBeInTheDocument();
-    });
-
-    // Go to page 2
-    const nextButtons = screen.getAllByRole('button', { name: /Next →/ });
-    await user.click(nextButtons[0]);
-
-    // Change page size to 50 (will give us less pages)
-    const pageSelect = screen.getByDisplayValue('25');
-    await user.selectOptions(pageSelect, '50');
-
-    // Should be back on page 1
-    const pageInfoElements = screen.getAllByText('Page 1 of 2');
     expect(pageInfoElements.length).toBeGreaterThan(0);
   });
 

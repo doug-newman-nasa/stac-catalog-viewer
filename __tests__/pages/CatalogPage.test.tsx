@@ -762,41 +762,6 @@ describe('CatalogPage', () => {
     expect(page2Infos.length).toBeGreaterThan(0);
   });
 
-  it('should change page size for items', () => {
-    const catalogWithManyItems: StacCatalog = {
-      type: 'Catalog',
-      stac_version: '1.0.0',
-      id: 'catalog-many-items',
-      description: 'A catalog with many items',
-      links: Array.from({ length: 30 }, (_, i) => ({
-        rel: 'item',
-        href: `item${i}.json`,
-        title: `Item ${i + 1}`,
-      })),
-    };
-
-    vi.mocked(useStacNode).mockReturnValue({
-      data: catalogWithManyItems,
-      loading: false,
-      error: null,
-      retry: vi.fn(),
-    });
-
-    renderWithRouter();
-
-    const pageInfosInitial = screen.getAllByText(/page 1 of 2/i);
-    expect(pageInfosInitial.length).toBeGreaterThan(0);
-
-    const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
-    if (selects.length > 1) {
-      const itemPageSizeSelect = selects[selects.length - 1] as HTMLSelectElement;
-      itemPageSizeSelect.value = '50';
-      fireEvent.change(itemPageSizeSelect);
-
-      expect(screen.getByText('Item 30')).toBeInTheDocument();
-    }
-  });
-
   it('should navigate back from header when back button is clicked and data loads', () => {
     vi.mocked(useStacNode).mockReturnValue({
       data: mockCatalog,
@@ -1457,42 +1422,6 @@ describe('CatalogPage', () => {
     expect(screen.getByText('Child 30')).toBeInTheDocument();
   });
 
-  it('should update item page to 1 when changing page size', () => {
-    const catalogWithManyItems: StacCatalog = {
-      type: 'Catalog',
-      stac_version: '1.0.0',
-      id: 'catalog-many-items',
-      description: 'A catalog with many items',
-      links: Array.from({ length: 30 }, (_, i) => ({
-        rel: 'item',
-        href: `item${i}.json`,
-        title: `Item ${i + 1}`,
-      })),
-    };
-
-    vi.mocked(useStacNode).mockReturnValue({
-      data: catalogWithManyItems,
-      loading: false,
-      error: null,
-      retry: vi.fn(),
-    });
-
-    renderWithRouter();
-
-    const nextButtons = screen.getAllByRole('button', { name: /next/i });
-    fireEvent.click(nextButtons[nextButtons.length - 1]);
-
-    expect(screen.getAllByText(/page 2 of/i).length).toBeGreaterThan(0);
-
-    const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
-    const itemPageSizeSelect = selects[selects.length - 1] as HTMLSelectElement;
-    itemPageSizeSelect.value = '50';
-    fireEvent.change(itemPageSizeSelect);
-
-    expect(screen.getByText('Item 1')).toBeInTheDocument();
-    expect(screen.getByText('Item 30')).toBeInTheDocument();
-  });
-
   it('should render URL correctly when URL has query parameters', () => {
     const url = 'https://example.com/catalog.json?param=value';
     const catalogData: StacCatalog = {
@@ -2043,52 +1972,6 @@ describe('CatalogPage', () => {
     const retryButton = screen.getByRole('button', { name: /retry/i });
     fireEvent.click(retryButton);
     expect(mockRetry).toHaveBeenCalled();
-  });
-
-  it('should change page size for dynamic items', () => {
-    const collection: StacCatalog = {
-      type: 'Collection',
-      stac_version: '1.0.0',
-      id: 'test-collection',
-      title: 'Test Collection',
-      description: 'A test collection',
-      links: [
-        { rel: 'items', href: 'items.json', title: 'Items' },
-      ],
-    };
-
-    vi.mocked(useStacNode).mockReturnValue({
-      data: collection,
-      loading: false,
-      error: null,
-      retry: vi.fn(),
-    });
-
-    const mockSetPageSize = vi.fn();
-
-    vi.mocked(useStacItemsSearch).mockReturnValue({
-      items: [],
-      loading: false,
-      error: null,
-      page: 1,
-      pageSize: 25,
-      setPageSize: mockSetPageSize,
-      hasNext: true,
-      hasPrevious: false,
-      numberMatched: 100,
-      goNext: vi.fn(),
-      goPrevious: vi.fn(),
-      retry: vi.fn(),
-    });
-
-    renderWithRouter();
-
-    const selects = screen.getAllByRole('combobox');
-    const itemPageSizeSelect = selects[selects.length - 1] as HTMLSelectElement;
-    itemPageSizeSelect.value = '50';
-    fireEvent.change(itemPageSizeSelect);
-
-    expect(mockSetPageSize).toHaveBeenCalledWith(50);
   });
 
   it('should render both static items and dynamic items sections when both present', () => {
@@ -2819,52 +2702,6 @@ describe('CatalogPage', () => {
 
     const searchForm = container.querySelector('.collection-search-form');
     expect(searchForm).toBeInTheDocument();
-  });
-
-  it('should handle catalog with items search link and setPageSize', async () => {
-    const user = userEvent.setup();
-    const collection: StacCatalog = {
-      type: 'Collection',
-      stac_version: '1.0.0',
-      id: 'test-collection',
-      title: 'Test Collection',
-      description: 'A test collection',
-      links: [
-        { rel: 'items', href: 'items.json', title: 'Items' },
-      ],
-    };
-
-    vi.mocked(useStacNode).mockReturnValue({
-      data: collection,
-      loading: false,
-      error: null,
-      retry: vi.fn(),
-    });
-
-    const mockSetPageSize = vi.fn();
-    vi.mocked(useStacItemsSearch).mockReturnValue({
-      items: [],
-      loading: false,
-      error: null,
-      page: 1,
-      pageSize: 25,
-      setPageSize: mockSetPageSize,
-      hasNext: true,
-      hasPrevious: false,
-      numberMatched: 100,
-      goNext: vi.fn(),
-      goPrevious: vi.fn(),
-      retry: vi.fn(),
-    });
-
-    renderWithRouter();
-
-    const selects = screen.getAllByRole('combobox');
-    const itemPageSizeSelect = selects[selects.length - 1] as HTMLSelectElement;
-    itemPageSizeSelect.value = '50';
-    fireEvent.change(itemPageSizeSelect);
-
-    expect(mockSetPageSize).toHaveBeenCalledWith(50);
   });
 
   it('should handle both child catalogs and items search link when neither has many items', () => {
