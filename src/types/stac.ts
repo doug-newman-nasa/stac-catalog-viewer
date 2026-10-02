@@ -45,9 +45,12 @@ export interface StacItem {
   type: string;
   id: string;
   geometry?: unknown;
+  bbox?: number[];
   properties?: Record<string, unknown>;
   assets?: Record<string, unknown>;
   links?: StacLink[];
+  stac_version?: string;
+  stac_extensions?: string[];
   [key: string]: unknown;
 }
 

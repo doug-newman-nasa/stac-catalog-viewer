@@ -4,6 +4,7 @@ import { ItemSearch } from '../components/ItemSearch';
 import { ExtentDisplay } from '../components/ExtentDisplay';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
 import { AssetLinks } from '../components/AssetLinks';
+import { GeometryDisplay } from '../components/GeometryDisplay';
 import { StorageDisplay } from '../components/StorageDisplay';
 import { LinksDisplay } from '../components/LinksDisplay';
 import { resolveHref, getItemBrowseLinks, getItemBrowseAssets, getItemOtherLinks } from '../lib/stac';
@@ -129,6 +130,7 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
                       <div className="item-card-header">
                         <span className="item-link-title">{item.id}</span>
                       </div>
+                      {(item.geometry || item.bbox) && <GeometryDisplay geometry={item.geometry} bbox={item.bbox} />}
                       {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} />}
                       {itemExtent && <ExtentDisplay extent={itemExtent} />}
                       {item.assets && <AssetLinks assets={item.assets} />}
