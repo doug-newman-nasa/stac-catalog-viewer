@@ -64,32 +64,6 @@ export function GeometryDisplay({ geometry, bbox }: GeometryDisplayProps) {
   const geometryType = geometry ? getGeometryType(geometry) : null;
   const hasValidBbox = displayBbox && displayBbox.length >= 4;
 
-  const calculateViewBox = (): string => {
-    if (!hasValidBbox) {
-      return '0 0 360 180';
-    }
-
-    const svgWest = (west + 180) % 360;
-    const svgEast = (east + 180) % 360;
-    const svgNorth = 90 - north;
-    const svgSouth = 90 - south;
-
-    let svgWidth = svgEast - svgWest;
-    let svgHeight = svgSouth - svgNorth;
-
-    if (svgWidth <= 0) svgWidth = 1;
-    if (svgHeight <= 0) svgHeight = 1;
-
-    const padding = Math.max(svgWidth, svgHeight) * 0.15;
-
-    const viewBoxX = Math.max(0, svgWest - padding);
-    const viewBoxY = Math.max(0, svgNorth - padding);
-    const viewBoxWidth = Math.min(360, svgWidth + padding * 2);
-    const viewBoxHeight = Math.min(180, svgHeight + padding * 2);
-
-    return `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`;
-  };
-
   return (
     <div className="geometry-display">
       <button
@@ -144,60 +118,6 @@ export function GeometryDisplay({ geometry, bbox }: GeometryDisplayProps) {
               </details>
             )}
           </div>
-
-          <svg
-            className="bbox-map"
-            viewBox={calculateViewBox()}
-            preserveAspectRatio="xMidYMid meet"
-            aria-label="Bounding box visualization"
-          >
-            <title>Bounding box visualization</title>
-            <defs>
-              <pattern id="latGrid" x="30" y="0" width="30" height="180" patternUnits="userSpaceOnUse">
-                <line x1="0" y1="0" x2="0" y2="180" stroke="#ddd" strokeWidth="0.5" />
-              </pattern>
-              <pattern id="lonGrid" x="0" y="15" width="360" height="15" patternUnits="userSpaceOnUse">
-                <line x1="0" y1="0" x2="360" y2="0" stroke="#ddd" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-
-            <rect width="360" height="180" fill="#f0f4f8" />
-            <rect width="360" height="180" fill="url(#latGrid)" />
-            <rect width="360" height="180" fill="url(#lonGrid)" />
-
-            <line x1="180" y1="0" x2="180" y2="180" stroke="#999" strokeWidth="1" strokeDasharray="2,2" />
-            <line x1="0" y1="90" x2="360" y2="90" stroke="#999" strokeWidth="1" strokeDasharray="2,2" />
-
-            {hasValidBbox && (
-              <>
-                <rect
-                  x={(west + 180) % 360}
-                  y={90 - north}
-                  width={Math.max(0.5, east - west)}
-                  height={Math.max(0.5, north - south)}
-                  fill="#6b5acd"
-                  fillOpacity="0.3"
-                  stroke="#6b5acd"
-                  strokeWidth="1"
-                />
-                <circle cx={(west + 180) % 360} cy={90 - north} r="2" fill="#6b5acd" />
-                <circle cx={(east + 180) % 360} cy={90 - south} r="2" fill="#6b5acd" />
-              </>
-            )}
-
-            <text x="5" y="15" fontSize="10" fill="#666">
-              90°N
-            </text>
-            <text x="5" y="175" fontSize="10" fill="#666">
-              90°S
-            </text>
-            <text x="350" y="95" fontSize="10" fill="#666" textAnchor="end">
-              180°E
-            </text>
-            <text x="10" y="95" fontSize="10" fill="#666">
-              180°W
-            </text>
-          </svg>
         </>
       )}
     </div>
