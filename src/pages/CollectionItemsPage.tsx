@@ -53,14 +53,16 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
 
       {itemsSearchLink ? (
         <>
-          <ItemSearch
-            searchParams={itemSearchParams}
-            onSearchParamsChange={handleItemSearchParamsChange}
-            onSearch={handleItemSearch}
-            onClearSearch={handleItemSearchClear}
-            loading={itemsSearch.loading}
-            error={itemsSearch.error}
-          />
+          {itemsSearch.supportsSearch && (
+            <ItemSearch
+              searchParams={itemSearchParams}
+              onSearchParamsChange={handleItemSearchParamsChange}
+              onSearch={handleItemSearch}
+              onClearSearch={handleItemSearchClear}
+              loading={itemsSearch.loading}
+              error={itemsSearch.error}
+            />
+          )}
 
           {itemsSearch.loading && (
             <div className="item-search-loading">

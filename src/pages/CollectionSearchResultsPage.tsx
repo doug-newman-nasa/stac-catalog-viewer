@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useCollectionSearch } from '../hooks/useCollectionSearch';
 import { CollectionSearch } from '../components/CollectionSearch';
-import { resolveHref } from '../lib/stac';
+import { resolveHref, getSearchLink } from '../lib/stac';
 import { getPaginatedData, getTotalPages } from '../lib/pagination';
 import type { CollectionSearchParams } from '../lib/collectionSearch';
 import type { StacCatalog } from '../types/stac';
@@ -9,6 +9,7 @@ import '../styles/CatalogPage.css';
 
 interface CollectionSearchResultsPageProps {
   url: string;
+  catalogData: StacCatalog;
   onNavigateToCollection: (targetUrl: string, searchParams?: CollectionSearchParams) => void;
   onResultsChange: (hasResults: boolean) => void;
 }
@@ -17,6 +18,7 @@ const RESULTS_PER_PAGE = 25;
 
 export function CollectionSearchResultsPage({
   url,
+  catalogData,
   onNavigateToCollection,
   onResultsChange,
 }: CollectionSearchResultsPageProps): JSX.Element {
@@ -24,6 +26,7 @@ export function CollectionSearchResultsPage({
   const [collectionSearchPage, setCollectionSearchPage] = useState(1);
 
   const searchState = useCollectionSearch();
+  const hasSearchSupport = !!getSearchLink(catalogData);
 
   useEffect(() => {
     onResultsChange(searchState.results.length > 0);
@@ -45,6 +48,10 @@ export function CollectionSearchResultsPage({
     searchState.clearResults();
     setCollectionSearchPage(1);
   };
+
+  if (!hasSearchSupport) {
+    return <></>;
+  }
 
   return (
     <>

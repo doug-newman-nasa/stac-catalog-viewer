@@ -12,6 +12,18 @@ describe('CollectionSearchResultsPage', () => {
   const mockOnNavigateToCollection = vi.fn();
   const mockOnResultsChange = vi.fn();
 
+  const mockCatalogData: StacCatalog = {
+    id: 'test-catalog',
+    title: 'Test Catalog',
+    description: 'A test catalog',
+    stac_version: '1.0.0',
+    type: 'Catalog',
+    links: [
+      { rel: 'search', href: 'https://example.com/search' },
+      { rel: 'self', href: 'https://example.com/catalog' },
+    ],
+  };
+
   const mockCollections: StacCatalog[] = [
     {
       id: 'collection1',
@@ -35,6 +47,7 @@ describe('CollectionSearchResultsPage', () => {
     return render(
       <CollectionSearchResultsPage
         url={mockUrl}
+        catalogData={mockCatalogData}
         onNavigateToCollection={mockOnNavigateToCollection}
         onResultsChange={mockOnResultsChange}
       />

@@ -42,6 +42,8 @@ describe('CollectionItemsPage', () => {
       { rel: 'self', href: 'https://example.com/items' },
       { rel: 'next', href: 'https://example.com/items?cursor=next' },
     ],
+    numberMatched: 2,
+    numberReturned: 2,
   };
 
   it('should render items section when items exist', () => {

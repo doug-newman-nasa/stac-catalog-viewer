@@ -15,6 +15,7 @@ interface UseStacItemsSearchState {
   hasNext: boolean;
   hasPrevious: boolean;
   numberMatched?: number;
+  supportsSearch: boolean;
   goNext: () => void;
   goPrevious: () => void;
   retry: () => void;
@@ -34,6 +35,7 @@ export function useStacItemsSearch(
   const currentPage = pageCache[currentPageIndex];
   const items = currentPage?.features || [];
   const numberMatched = currentPage?.numberMatched;
+  const supportsSearch = numberMatched !== undefined;
 
   const fetchPage = async (href: string) => {
     setLoading(true);
@@ -112,6 +114,7 @@ export function useStacItemsSearch(
     hasNext,
     hasPrevious,
     numberMatched,
+    supportsSearch,
     goNext,
     goPrevious,
     retry: () => {

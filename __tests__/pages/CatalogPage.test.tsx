@@ -38,6 +38,7 @@ const mockCatalogWithoutItems: StacCatalog = {
   links: [
     { rel: 'child', href: 'child1.json', title: 'Child 1' },
     { rel: 'child', href: 'child2.json', title: 'Child 2' },
+    { rel: 'search', href: 'search.json', title: 'Search' },
   ],
 };
 
@@ -50,6 +51,7 @@ const mockItemsSearchDefault = {
   setPageSize: vi.fn(),
   hasNext: false,
   hasPrevious: false,
+  supportsSearch: true,
   goNext: vi.fn(),
   goPrevious: vi.fn(),
   retry: vi.fn(),
@@ -2632,6 +2634,7 @@ describe('CatalogPage', () => {
       description: 'A test catalog',
       links: [
         { rel: 'child', href: 'child1.json', title: 'Child 1' },
+        { rel: 'search', href: 'search.json', title: 'Search' },
       ],
     };
 

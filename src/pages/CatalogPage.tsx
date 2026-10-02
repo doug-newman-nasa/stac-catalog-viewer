@@ -170,6 +170,7 @@ export function CatalogPage() {
       {!itemsSearchLink && itemLinks.length === 0 && (
         <CollectionSearchResultsPage
           url={url}
+          catalogData={data}
           onNavigateToCollection={handleNavigateToCollection}
           onResultsChange={setHasCollectionSearchResults}
         />
