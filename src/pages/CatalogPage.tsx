@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStacNode } from '../hooks/useStacNode';
 import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, getOtherLinks, getParentLink, resolveHref, isCatalog } from '../lib/stac';
@@ -24,7 +24,12 @@ export function CatalogPage() {
   const [urlCopied, setUrlCopied] = useState(false);
   const [hasCollectionSearchResults, setHasCollectionSearchResults] = useState(false);
   const [collectionSearchParams, setCollectionSearchParams] = useState<CollectionSearchParams>({ limit: 25 });
+  const mainRef = useRef<HTMLMainElement>(null);
+  const skipRef = useRef<HTMLAnchorElement>(null);
 
+  useEffect(() => {
+    mainRef.current?.focus();
+  }, [searchParams.get('url')]);
 
   const url = searchParams.get('url');
 
@@ -52,39 +57,61 @@ export function CatalogPage() {
     navigate(`/catalog?url=${encodeURIComponent(resolvedParentUrl)}`);
   };
 
+  const skipToMainContent = (e: React.KeyboardEvent<HTMLAnchorElement>) => {
+    if (e.key === 'Enter') {
+      mainRef.current?.focus();
+    }
+  };
+
 
   if (!url) {
     return (
-      <div className="catalog-page-error">
-        <p>No catalog URL provided</p>
-        <button onClick={() => navigate('/')}>← Back to Home</button>
-      </div>
+      <main className="catalog-page-error" role="main" tabIndex={-1} ref={mainRef}>
+        <h1>Error: No Catalog URL Provided</h1>
+        <p>Unable to load catalog. No catalog URL was provided.</p>
+        <button
+          onClick={() => navigate('/')}
+          aria-label="Return to home page"
+        >
+          ← Back to Home
+        </button>
+      </main>
     );
   }
 
   if (loading) {
     return (
-      <div className="catalog-page loading">
-        <span className="spinner">⏳</span> Loading catalog...
-      </div>
+      <main className="catalog-page loading" role="main" aria-busy="true" aria-label="Loading catalog">
+        <span className="spinner" aria-hidden="true">⏳</span>
+        <span>Loading catalog...</span>
+      </main>
     );
   }
 
   if (error) {
     return (
-      <div className="catalog-page error">
+      <main className="catalog-page error" role="main" tabIndex={-1} ref={mainRef}>
         <div className="error-content">
-          <p className="error-message">{error.message}</p>
+          <h1>Error Loading Catalog</h1>
+          <p className="error-message" role="alert">{error.message}</p>
           <div className="error-actions">
-            <button onClick={retry} className="retry-button">
+            <button
+              onClick={retry}
+              className="retry-button"
+              aria-label="Retry loading the catalog"
+            >
               Retry
             </button>
-            <button onClick={() => navigate(-1)} className="back-button">
+            <button
+              onClick={() => navigate(-1)}
+              className="back-button"
+              aria-label="Go back to previous page"
+            >
               ← Back
             </button>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -112,19 +139,34 @@ export function CatalogPage() {
   ];
 
   return (
-    <div className="catalog-page">
-      <div className="page-header">
-        <button onClick={() => navigate(-1)} className="back-button-header">
-          ← Back
-        </button>
-        <button
-          onClick={() => setShowUrl(!showUrl)}
-          className="url-toggle-button"
-          title={showUrl ? 'Hide URL' : 'Show URL'}
-        >
-          {showUrl ? '🔗 Hide URL' : '🔗 Show URL'}
-        </button>
-      </div>
+    <>
+      <a
+        ref={skipRef}
+        href="#main-content"
+        onClick={skipToMainContent}
+        className="skip-to-main"
+        aria-label="Skip to main content"
+      >
+        Skip to main content
+      </a>
+      <main className="catalog-page" id="main-content" role="main" ref={mainRef} tabIndex={-1}>
+        <header className="page-header" role="banner">
+          <button
+            onClick={() => navigate(-1)}
+            className="back-button-header"
+            aria-label="Go back to previous page"
+          >
+            ← Back
+          </button>
+          <button
+            onClick={() => setShowUrl(!showUrl)}
+            className="url-toggle-button"
+            aria-label={showUrl ? 'Hide catalog URL' : 'Show catalog URL'}
+            aria-pressed={showUrl}
+          >
+            {showUrl ? '🔗 Hide URL' : '🔗 Show URL'}
+          </button>
+        </header>
 
       {showUrl && (
         <div className="url-display">
@@ -244,6 +286,7 @@ export function CatalogPage() {
           )}
         </>
       )}
-    </div>
+      </main>
+    </>
   );
 }
