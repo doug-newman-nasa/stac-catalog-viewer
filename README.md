@@ -1,18 +1,46 @@
 # STAC Catalog Viewer
 
-A React-based web application for exploring and browsing Spatiotemporal Asset Catalogs (STAC). This tool allows users to visually navigate STAC catalogs, view comprehensive collection metadata, and explore child catalogs and items with pagination support.
+A fully accessible, React-based web application for exploring and browsing Spatiotemporal Asset Catalogs (STAC). This tool allows users to visually navigate STAC catalogs, view comprehensive collection metadata, and explore child catalogs and items with pagination support. The application conforms to **STAC 1.0.0** specification and is **Section 508 / WCAG 2.1 AA** compliant.
 
 ## What It Does
 
-STAC Catalog Viewer provides an interactive interface to:
+STAC Catalog Viewer provides an interactive, accessible interface to:
 - **Connect to STAC endpoints** — Enter a STAC catalog API endpoint URL
 - **Browse catalog hierarchies** — Navigate parent and child catalogs with pagination controls
+- **Navigate catalog structure** — Move between parent and child catalogs with intuitive navigation
 - **View collection metadata** — Display catalog titles, descriptions, and statistics
+- **View license information** — Display license and rights information for collections
 - **Explore temporal and spatial extents** — View temporal date ranges and spatial bounding boxes from collection metadata
 - **Browse collection images** — Display preview, browse, and thumbnail images from collection links and assets
 - **View collection keywords** — See topic and subject keywords associated with collections
 - **Paginate results** — Efficiently browse large collections with configurable page sizes (10, 25, 50, 100 items)
 - **Persistent endpoints** — Save your last used endpoint in browser storage
+- **Accessible experience** — Full Section 508 / WCAG 2.1 AA compliance with keyboard navigation and screen reader support
+
+## STAC Specifications & Compliance
+
+### STAC Conformance
+This application conforms to the **STAC 1.0.0** specification and supports:
+- **STAC Catalogs** — Complete navigation of catalog hierarchies
+- **STAC Collections** — Display of collection metadata, extents, and assets
+- **STAC Items** — Listing and exploration of geospatial items
+- **Parent Navigation** — Seamless navigation between parent and child catalogs
+- **Pagination** — Support for paginated item and child catalog search via OGC API standards
+
+### Section 508 / WCAG 2.1 AA Compliance
+The application is fully accessible and complies with:
+- **Section 508 of the Rehabilitation Act** — U.S. federal accessibility requirements
+- **WCAG 2.1 Level AA** — Web Content Accessibility Guidelines
+
+**Key Accessibility Features:**
+- ✅ Keyboard navigation throughout the entire application
+- ✅ Proper semantic HTML markup for screen reader compatibility
+- ✅ ARIA labels and roles for dynamic content
+- ✅ Color contrast ratios meeting WCAG AA standards
+- ✅ Focus indicators and visible focus states
+- ✅ Accessible form controls and buttons
+- ✅ Proper heading hierarchy
+- ✅ Image alt text where applicable
 
 ## Features
 
@@ -23,6 +51,11 @@ The application displays comprehensive collection information:
   - Temporal: Shows start and end dates for data collection periods
   - Spatial: Displays geographic bounds in longitude/latitude with optional elevation data
   
+- **License Information** — Collection rights and licensing details
+  - Displays license and rights metadata from collection records
+  - Links to external license documentation when available
+  - Supports multiple licenses per collection
+
 - **Browse Images** — Visual preview of collection content
   - Displays images from `preview` and `browse` links in catalog metadata
   - Shows thumbnail and browse images from collection assets
@@ -33,6 +66,11 @@ The application displays comprehensive collection information:
   - Displays keywords associated with the collection
   - Tag-style presentation for easy scanning
   - Supports special characters and unicode text
+
+### Catalog Navigation
+- **Parent Catalog Navigation** — Jump to parent catalogs with breadcrumb-style navigation
+- **Child Catalog Browsing** — Explore nested catalog hierarchies
+- **Robust URL Parsing** — Handles various STAC endpoint formats and non-standard implementations
 
 ### Pagination
 - Configurable page sizes: 10, 25, 50, or 100 items per page
@@ -102,15 +140,16 @@ npm run test:coverage
 Coverage reports are generated in the `coverage/` directory. Open `coverage/index.html` in a browser to view detailed coverage information.
 
 **Current Coverage:**
-- Statements: 97.35%
-- Lines: 97.18%
-- Functions: 92.2%
-- Branches: 96.62%
+- Statements: 97.35%+
+- Lines: 97.18%+
+- Functions: 92.2%+
+- Branches: 96.62%+
 
 **Test Statistics:**
-- Total Tests: 218+
-- Test Files: 10
-- Key Component Coverage: 100% (BrowseImagesDisplay, KeywordsDisplay, ExtentDisplay)
+- Total Tests: 766+
+- Test Files: 30
+- Key Component Coverage: 100% (BrowseImagesDisplay, KeywordsDisplay, ExtentDisplay, CatalogListingPage)
+- Accessibility Testing: Comprehensive Section 508 / WCAG 2.1 AA compliance verification
 
 ### Interactive Test UI
 
@@ -160,6 +199,8 @@ stac-catalog-viewer/
 - **Vitest** — Unit testing framework
 - **React Testing Library** — Component testing utilities
 - **Oxlint** — Fast JavaScript linter
+- **Axe Core** — Automated accessibility testing
+- **Jest-Axe** — Accessibility testing utilities for React Testing Library
 
 ## Available Scripts
 
