@@ -131,7 +131,7 @@ describe('BrowseImagesDisplay', () => {
     expect(items?.length).toBe(3);
   });
 
-  it('should use image title as link title attribute', () => {
+  it('should use image title as link aria-label', () => {
     const images: StacLink[] = [
       {
         rel: 'preview',
@@ -144,10 +144,10 @@ describe('BrowseImagesDisplay', () => {
     render(<BrowseImagesDisplay images={images} />);
 
     const link = screen.getByRole('link');
-    expect(link).toHaveAttribute('title', 'RGB True Color');
+    expect(link).toHaveAttribute('aria-label', 'View RGB True Color');
   });
 
-  it('should use default title when image title is missing', () => {
+  it('should use default aria-label when image title is missing', () => {
     const images: StacLink[] = [
       {
         rel: 'preview',
@@ -159,7 +159,7 @@ describe('BrowseImagesDisplay', () => {
     render(<BrowseImagesDisplay images={images} />);
 
     const link = screen.getByRole('link');
-    expect(link).toHaveAttribute('title', 'Browse image');
+    expect(link).toHaveAttribute('aria-label', 'View browse image 1');
   });
 
   it('should handle missing baseUrl gracefully', () => {

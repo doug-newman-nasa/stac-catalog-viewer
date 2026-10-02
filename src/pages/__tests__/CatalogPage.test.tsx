@@ -70,8 +70,8 @@ describe('CatalogPage', () => {
 
       renderWithRouter(<CatalogPage />);
 
-      expect(screen.getByText('No catalog URL provided')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Back to Home/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /Error: No Catalog URL Provided/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Return to home/i })).toBeInTheDocument();
     });
   });
 
@@ -105,7 +105,7 @@ describe('CatalogPage', () => {
 
       expect(screen.getByText(errorMessage)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Retry/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Back/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /[Gg]o back|[Bb]ack/i })).toBeInTheDocument();
     });
 
     it('should call retry when retry button is clicked', () => {
@@ -214,7 +214,7 @@ describe('CatalogPage', () => {
 
       renderWithRouter(<CatalogPage />, ['/catalog?url=https://example.com/catalog.json']);
 
-      const toggleButton = screen.getByRole('button', { name: /Show URL/i });
+      const toggleButton = screen.getByRole('button', { name: /catalog URL/i });
       fireEvent.click(toggleButton);
 
       expect(screen.getByText(/Hide URL/i)).toBeInTheDocument();
@@ -235,7 +235,7 @@ describe('CatalogPage', () => {
 
       renderWithRouter(<CatalogPage />, ['/catalog?url=https://example.com/catalog.json']);
 
-      const toggleButton = screen.getByRole('button', { name: /Show URL/i });
+      const toggleButton = screen.getByRole('button', { name: /catalog URL/i });
       fireEvent.click(toggleButton);
 
       const copyButton = screen.getByRole('button', { name: /Copy/i });
@@ -540,7 +540,7 @@ describe('CatalogPage', () => {
 
       renderWithRouter(<CatalogPage />, ['/catalog?url=https://example.com/catalog.json']);
 
-      const backButton = screen.getByRole('button', { name: /← Back/ });
+      const backButton = screen.getByRole('button', { name: /[Gg]o back/i });
       fireEvent.click(backButton);
 
       expect(mockUseStacNode).toHaveBeenCalled();
@@ -556,7 +556,7 @@ describe('CatalogPage', () => {
 
       renderWithRouter(<CatalogPage />, ['/catalog?url=https://example.com/catalog.json']);
 
-      const backButton = screen.getByRole('button', { name: /← Back/i });
+      const backButton = screen.getByRole('button', { name: /Go back|back/i });
       fireEvent.click(backButton);
 
       expect(mockUseStacNode).toHaveBeenCalled();
@@ -641,7 +641,7 @@ describe('CatalogPage', () => {
 
       renderWithRouter(<CatalogPage />, ['/catalog?url=https://example.com/catalog.json']);
 
-      const toggleButton = screen.getByRole('button', { name: /Show URL/i });
+      const toggleButton = screen.getByRole('button', { name: /catalog URL/i });
       fireEvent.click(toggleButton);
 
       const copyButton = screen.getByRole('button', { name: /Copy/i });
@@ -669,7 +669,7 @@ describe('CatalogPage', () => {
 
       renderWithRouter(<CatalogPage />);
 
-      expect(screen.getByText('No catalog URL provided')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /Error: No Catalog URL Provided/i })).toBeInTheDocument();
     });
   });
 
@@ -1083,7 +1083,7 @@ describe('CatalogPage', () => {
 
       expect(screen.queryByText(/Catalog URL:/)).not.toBeInTheDocument();
 
-      const toggleButton = screen.getByRole('button', { name: /Show URL/i });
+      const toggleButton = screen.getByRole('button', { name: /catalog URL/i });
       fireEvent.click(toggleButton);
 
       expect(screen.getByText(/Catalog URL:/)).toBeInTheDocument();
@@ -1183,7 +1183,7 @@ describe('CatalogPage', () => {
 
       renderWithRouter(<CatalogPage />);
 
-      const backButton = screen.getByRole('button', { name: /Back to Home/i });
+      const backButton = screen.getByRole('button', { name: /Return to home/i });
       expect(backButton).toBeInTheDocument();
       fireEvent.click(backButton);
     });
