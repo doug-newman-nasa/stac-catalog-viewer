@@ -74,13 +74,6 @@ export function ItemSearch({
     });
   };
 
-  const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    onSearchParamsChange({
-      ...searchParams,
-      limit: isNaN(value) ? undefined : value,
-    });
-  };
 
   const handleClearAll = () => {
     onClearSearch();
@@ -140,19 +133,6 @@ export function ItemSearch({
               />
               <small>Comma-separated item identifiers</small>
             </div>
-
-            <div className="form-group">
-              <label htmlFor="limit-search">Results Per Page</label>
-              <input
-                id="limit-search"
-                type="number"
-                min="1"
-                max="100"
-                value={searchParams.limit || 25}
-                onChange={handleLimitChange}
-                className="search-input"
-              />
-            </div>
           </div>
         )}
 
@@ -160,7 +140,7 @@ export function ItemSearch({
           <button type="submit" disabled={loading} className="search-button">
             {loading ? 'Searching...' : 'Apply Filters'}
           </button>
-          {(searchParams.bbox || searchParams.bboxString || searchParams.datetime || searchParams.ids || searchParams.idsString || searchParams.limit) && (
+          {(searchParams.bbox || searchParams.bboxString || searchParams.datetime || searchParams.ids || searchParams.idsString) && (
             <button
               type="button"
               onClick={handleClearAll}

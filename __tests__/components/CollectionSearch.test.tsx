@@ -229,51 +229,6 @@ describe('CollectionSearch Component', () => {
     expect(datetimeInput).toBeInTheDocument();
   });
 
-  it('should handle invalid limit input (NaN)', () => {
-    render(
-      <CollectionSearch
-        searchParams={defaultSearchParams}
-        onSearchParamsChange={mockOnSearchParamsChange}
-        onSearch={mockOnSearch}
-        onClearSearch={mockOnClearSearch}
-      />
-    );
-
-    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
-    fireEvent.click(advancedToggle);
-
-    const limitInput = screen.getByDisplayValue('25');
-    fireEvent.change(limitInput, { target: { value: 'invalid' } });
-
-    expect(mockOnSearchParamsChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        limit: undefined,
-      })
-    );
-  });
-
-  it('should update limit when valid number is entered', () => {
-    render(
-      <CollectionSearch
-        searchParams={defaultSearchParams}
-        onSearchParamsChange={mockOnSearchParamsChange}
-        onSearch={mockOnSearch}
-        onClearSearch={mockOnClearSearch}
-      />
-    );
-
-    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
-    fireEvent.click(advancedToggle);
-
-    const limitInput = screen.getByDisplayValue('25');
-    fireEvent.change(limitInput, { target: { value: '50' } });
-
-    expect(mockOnSearchParamsChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        limit: 50,
-      })
-    );
-  });
 
   it('should allow toggling advanced filters open and closed', async () => {
     const user = userEvent.setup();
@@ -437,5 +392,143 @@ describe('CollectionSearch Component', () => {
         bboxString: ' -10 , -10 , 10 , 10 ',
       })
     );
+  });
+
+  it('should parse and submit valid bbox on form submission', async () => {
+    const user = userEvent.setup();
+    const searchParams: CollectionSearchParams = {
+      bboxString: '-10, -10, 10, 10',
+    };
+
+    render(
+      <CollectionSearch
+        searchParams={searchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    await user.click(advancedToggle);
+
+    const searchButton = screen.getByRole('button', { name: /Search Collections/i });
+    await user.click(searchButton);
+
+    expect(mockOnSearch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bbox: [-10, -10, 10, 10],
+      })
+    );
+  });
+
+  it('should not call onSearch when bbox is invalid (not 4 parts)', async () => {
+    const user = userEvent.setup();
+    const searchParams: CollectionSearchParams = {
+      bboxString: '-10, -10, 10',
+    };
+
+    render(
+      <CollectionSearch
+        searchParams={searchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    await user.click(advancedToggle);
+
+    const searchButton = screen.getByRole('button', { name: /Search Collections/i });
+    await user.click(searchButton);
+
+    expect(mockOnSearch).not.toHaveBeenCalled();
+  });
+
+  it('should not call onSearch when bbox contains NaN values', async () => {
+    const user = userEvent.setup();
+    const searchParams: CollectionSearchParams = {
+      bboxString: '-10, -10, invalid, 10',
+    };
+
+    render(
+      <CollectionSearch
+        searchParams={searchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    await user.click(advancedToggle);
+
+    const searchButton = screen.getByRole('button', { name: /Search Collections/i });
+    await user.click(searchButton);
+
+    expect(mockOnSearch).not.toHaveBeenCalled();
+  });
+
+  it('should submit with undefined bbox when bboxString is not set', async () => {
+    const user = userEvent.setup();
+    const searchParams: CollectionSearchParams = { q: 'test' };
+
+    render(
+      <CollectionSearch
+        searchParams={searchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const searchButton = screen.getByRole('button', { name: /Search Collections/i });
+    await user.click(searchButton);
+
+    expect(mockOnSearch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bbox: undefined,
+      })
+    );
+  });
+
+  it('should call handleDatetimeChange handler', async () => {
+    const user = userEvent.setup();
+    render(
+      <CollectionSearch
+        searchParams={defaultSearchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const advancedToggle = screen.getByRole('button', { name: /Advanced Filters/i });
+    await user.click(advancedToggle);
+
+    const datetimeInput = screen.getByPlaceholderText(/2020-01-01\/2023-12-31/i);
+    await user.type(datetimeInput, '2021-01-01/2021-12-31');
+
+    expect(mockOnSearchParamsChange).toHaveBeenCalled();
+  });
+
+  it('should show error message when invalid bbox error is present', () => {
+    const searchParams: CollectionSearchParams = {
+      bboxString: 'invalid',
+      bbox: undefined,
+    };
+
+    render(
+      <CollectionSearch
+        searchParams={searchParams}
+        onSearchParamsChange={mockOnSearchParamsChange}
+        onSearch={mockOnSearch}
+        onClearSearch={mockOnClearSearch}
+      />
+    );
+
+    const errorMessage = screen.getByText(/Invalid bounding box/);
+    expect(errorMessage).toBeInTheDocument();
   });
 });

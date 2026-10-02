@@ -7,9 +7,9 @@ import { AssetLinks } from '../components/AssetLinks';
 import { StorageDisplay } from '../components/StorageDisplay';
 import { LinksDisplay } from '../components/LinksDisplay';
 import { resolveHref, getItemBrowseLinks, getItemBrowseAssets, getItemOtherLinks } from '../lib/stac';
-import { applyItemSearchParams, collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
+import { collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
 import { extractItemExtent } from '../lib/itemExtent';
-import { getTotalPages, PAGE_SIZE_OPTIONS, getPaginatedData } from '../lib/pagination';
+import { getTotalPages, getPaginatedData } from '../lib/pagination';
 import type { StacLink } from '../types/stac';
 import type { ItemSearchParams } from '../lib/itemSearch';
 import type { CollectionSearchParams } from '../lib/collectionSearch';
@@ -23,7 +23,7 @@ interface CollectionItemsPageProps {
 }
 
 export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectionSearchParams }: CollectionItemsPageProps): JSX.Element {
-  const [itemPageSize, setItemPageSize] = useState(25);
+  const itemPageSize = 25;
   const [itemCurrentPage, setItemCurrentPage] = useState(1);
   const [itemSearchParams, setItemSearchParams] = useState<ItemSearchParams>(() =>
     collectionSearchParams ? collectionSearchParamsToItemSearchParams(collectionSearchParams) : {}
@@ -32,14 +32,6 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
   const resolvedItemsHref = itemsSearchLink && url ? resolveHref(url, itemsSearchLink.href) : null;
   const itemsSearch = useStacItemsSearch(resolvedItemsHref, itemPageSize, itemSearchParams);
 
-  const handlePageSizeChange = (newSize: number) => {
-    setItemPageSize(newSize);
-    if (itemsSearchLink) {
-      itemsSearch.setPageSize(newSize);
-    } else {
-      setItemCurrentPage(1);
-    }
-  };
 
   const handleItemSearch = (params: ItemSearchParams) => {
     setItemSearchParams(params);
@@ -57,33 +49,6 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
     <div className="section">
       <div className="section-header">
         <h3 className="section-title">Items</h3>
-        <div className="section-controls">
-          {itemsSearchLink && url && (
-            <a
-              href={`${applyItemSearchParams(resolveHref(url, itemsSearchLink.href), itemSearchParams)}?limit=${itemPageSize}&offset=${(itemsSearch.page - 1) * itemPageSize}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="view-items-link"
-              title="View items with current parameters"
-            >
-              View Items Endpoint ↗
-            </a>
-          )}
-          <label className="page-size-label">
-            Per page:
-            <select
-              value={itemPageSize}
-              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-              className="page-size-select"
-            >
-              {PAGE_SIZE_OPTIONS.map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
       </div>
 
       {itemsSearchLink ? (
