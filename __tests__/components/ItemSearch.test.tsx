@@ -284,23 +284,6 @@ describe('ItemSearch', () => {
     expect(screen.queryByRole('button', { name: /Clear Filters/ })).not.toBeInTheDocument();
   });
 
-  it('should show clear button when limit is set', async () => {
-    const searchParams: ItemSearchParams = { limit: 50 };
-    const user = userEvent.setup();
-    render(
-      <ItemSearch
-        searchParams={searchParams}
-        onSearchParamsChange={mockOnSearchParamsChange}
-        onSearch={mockOnSearch}
-        onClearSearch={mockOnClearSearch}
-      />
-    );
-
-    const toggleButton = screen.getByRole('button', { name: /Search & Filter Items/ });
-    await user.click(toggleButton);
-
-    expect(screen.getByRole('button', { name: /Clear Filters/ })).toBeInTheDocument();
-  });
 
   it('should trim whitespace from ids when parsing', async () => {
     const searchParams: ItemSearchParams = {

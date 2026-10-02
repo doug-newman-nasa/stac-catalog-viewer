@@ -63,13 +63,6 @@ export function CollectionSearch({
     });
   };
 
-  const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    onSearchParamsChange({
-      ...searchParams,
-      limit: isNaN(value) ? undefined : value,
-    });
-  };
 
   const handleClearAll = () => {
     onClearSearch();
@@ -128,19 +121,6 @@ export function CollectionSearch({
                 className="search-input"
               />
               <small>Format: start/end, start/, /end, or single date</small>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="limit-search">Results Per Page</label>
-              <input
-                id="limit-search"
-                type="number"
-                min="1"
-                max="100"
-                value={searchParams.limit || 25}
-                onChange={handleLimitChange}
-                className="search-input"
-              />
             </div>
           </div>
         )}
