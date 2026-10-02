@@ -1,4 +1,4 @@
-import type { StacCatalog, StacLink, StacItemCollection, StacItem } from '../types/stac';
+import type { StacCatalog, StacLink, StacItemCollection, StacItem, StacResource } from '../types/stac';
 import { logger } from './logger';
 
 export async function fetchStacCatalog(url: string): Promise<StacCatalog> {
@@ -71,6 +71,54 @@ export async function fetchItemCollection(url: string): Promise<StacItemCollecti
     const duration = performance.now() - startTime;
     if (error instanceof Error) {
       logger.logError('Error fetching item collection', error, { url, duration });
+    }
+    throw error;
+  }
+}
+
+export function isCatalog(data: unknown): data is StacCatalog {
+  if (!data || typeof data !== 'object') return false;
+  const obj = data as Record<string, unknown>;
+  return typeof obj.type === 'string' && obj.type !== 'FeatureCollection' && Array.isArray(obj.links);
+}
+
+export function isItemCollection(data: unknown): data is StacItemCollection {
+  if (!data || typeof data !== 'object') return false;
+  const obj = data as Record<string, unknown>;
+  return obj.type === 'FeatureCollection' && Array.isArray(obj.features) && Array.isArray(obj.links);
+}
+
+export async function fetchStacResource(url: string): Promise<StacResource> {
+  const startTime = performance.now();
+  logger.logRequest('GET', url);
+
+  try {
+    const response = await fetch(url);
+    const duration = performance.now() - startTime;
+
+    if (!response.ok) {
+      logger.logResponse(url, response.status, duration, { statusText: response.statusText });
+      const error = `HTTP ${response.status}: ${response.statusText}`;
+      logger.logError('Failed to fetch STAC resource', error, { url });
+      throw new Error(error);
+    }
+
+    const data = await response.json();
+    logger.logResponse(url, response.status, duration, { dataType: typeof data });
+
+    if (isCatalog(data)) {
+      return data as StacCatalog;
+    } else if (isItemCollection(data)) {
+      return data as StacItemCollection;
+    } else {
+      const error = 'Invalid STAC resource: must be a Catalog or FeatureCollection with required fields';
+      logger.logError('Invalid resource response', error, { url, hasType: !!data?.type, hasLinks: Array.isArray(data?.links), hasFeatures: Array.isArray(data?.features) });
+      throw new Error(error);
+    }
+  } catch (error) {
+    const duration = performance.now() - startTime;
+    if (error instanceof Error) {
+      logger.logError('Error fetching STAC resource', error, { url, duration });
     }
     throw error;
   }

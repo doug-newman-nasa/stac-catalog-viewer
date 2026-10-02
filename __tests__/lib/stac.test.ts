@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, withLimit, fetchItemCollection, resolveHref, getItemBrowseLinks, getItemBrowseAssets, getOtherLinks, getItemOtherLinks, getParentLink } from '../../src/lib/stac';
+import { fetchStacCatalog, getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, withLimit, fetchItemCollection, resolveHref, getItemBrowseLinks, getItemBrowseAssets, getOtherLinks, getItemOtherLinks, getParentLink, isCatalog, isItemCollection, fetchStacResource } from '../../src/lib/stac';
 import type { StacCatalog, StacItem } from '../../src/types/stac';
 
 describe('stac utilities', () => {
@@ -1022,6 +1022,133 @@ describe('stac utilities', () => {
       expect(result[0].rel).toBe('derived_from');
       expect(result[1].rel).toBe('via');
       expect(result[1].type).toBe('application/json');
+    });
+  });
+
+  describe('isCatalog', () => {
+    it('should identify a Catalog', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+      };
+      expect(isCatalog(catalog)).toBe(true);
+    });
+
+    it('should reject a FeatureCollection', () => {
+      const featureCollection: StacItemCollection = {
+        type: 'FeatureCollection',
+        features: [],
+        links: [],
+      };
+      expect(isCatalog(featureCollection)).toBe(false);
+    });
+
+    it('should reject invalid objects', () => {
+      expect(isCatalog({})).toBe(false);
+      expect(isCatalog(null)).toBe(false);
+      expect(isCatalog(undefined)).toBe(false);
+    });
+  });
+
+  describe('isItemCollection', () => {
+    it('should identify a FeatureCollection with features and links', () => {
+      const collection: StacItemCollection = {
+        type: 'FeatureCollection',
+        features: [],
+        links: [],
+      };
+      expect(isItemCollection(collection)).toBe(true);
+    });
+
+    it('should reject a Catalog', () => {
+      const catalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test',
+        description: 'Test',
+        links: [],
+      };
+      expect(isItemCollection(catalog)).toBe(false);
+    });
+
+    it('should reject objects missing features array', () => {
+      const incomplete = {
+        type: 'FeatureCollection',
+        links: [],
+      };
+      expect(isItemCollection(incomplete as any)).toBe(false);
+    });
+
+    it('should reject objects missing links array', () => {
+      const incomplete = {
+        type: 'FeatureCollection',
+        features: [],
+      };
+      expect(isItemCollection(incomplete as any)).toBe(false);
+    });
+  });
+
+  describe('fetchStacResource', () => {
+    it('should fetch and return a Catalog', async () => {
+      const mockCatalog: StacCatalog = {
+        type: 'Catalog',
+        stac_version: '1.0.0',
+        id: 'test-catalog',
+        description: 'Test catalog',
+        links: [],
+      };
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => mockCatalog,
+      });
+
+      const result = await fetchStacResource('https://example.com/catalog.json');
+      expect(result).toEqual(mockCatalog);
+      expect(isCatalog(result)).toBe(true);
+    });
+
+    it('should fetch and return a FeatureCollection', async () => {
+      const mockCollection: StacItemCollection = {
+        type: 'FeatureCollection',
+        features: [],
+        links: [],
+      };
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => mockCollection,
+      });
+
+      const result = await fetchStacResource('https://example.com/collections.json');
+      expect(result).toEqual(mockCollection);
+      expect(isItemCollection(result)).toBe(true);
+    });
+
+    it('should throw error on invalid resource', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: 'test' }),
+      });
+
+      await expect(
+        fetchStacResource('https://example.com/invalid.json')
+      ).rejects.toThrow(/Invalid STAC resource/);
+    });
+
+    it('should throw error on network failure', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+      });
+
+      await expect(
+        fetchStacResource('https://example.com/notfound.json')
+      ).rejects.toThrow('HTTP 404: Not Found');
     });
   });
 });

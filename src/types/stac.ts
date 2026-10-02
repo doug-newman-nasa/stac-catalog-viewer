@@ -62,3 +62,5 @@ export interface StacItemCollection {
   numberReturned?: number;
   [key: string]: unknown;
 }
+
+export type StacResource = StacCatalog | StacItemCollection;

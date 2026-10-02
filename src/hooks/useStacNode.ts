@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
-import type { StacCatalog } from '../types/stac';
-import { fetchStacCatalog } from '../lib/stac';
+import type { StacResource } from '../types/stac';
+import { fetchStacResource } from '../lib/stac';
 import { logger } from '../lib/logger';
 
 interface UseStacNodeState {
-  data: StacCatalog | null;
+  data: StacResource | null;
   loading: boolean;
   error: Error | null;
   retry: () => void;
 }
 
 export function useStacNode(url: string): UseStacNodeState {
-  const [data, setData] = useState<StacCatalog | null>(null);
+  const [data, setData] = useState<StacResource | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -20,9 +20,9 @@ export function useStacNode(url: string): UseStacNodeState {
     setError(null);
     logger.logInfo('Fetching STAC node', { url });
     try {
-      const catalog = await fetchStacCatalog(url);
-      setData(catalog);
-      logger.logInfo('Successfully loaded STAC node', { url, type: catalog.type });
+      const resource = await fetchStacResource(url);
+      setData(resource);
+      logger.logInfo('Successfully loaded STAC node', { url, type: resource.type });
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       setError(error);
