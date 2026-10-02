@@ -87,7 +87,7 @@ export function getItemsLink(catalog: StacCatalog): StacLink | undefined {
 
 export function getSearchLink(catalog: StacCatalog | undefined): StacLink | undefined {
   if (!catalog) return undefined;
-  return catalog.links.find((link) => link.rel === 'search');
+  return catalog.links.find((link) => link.rel === 'search' || link.rel === 'data');
 }
 
 export function getBrowseLinks(catalog: StacCatalog): StacLink[] {
