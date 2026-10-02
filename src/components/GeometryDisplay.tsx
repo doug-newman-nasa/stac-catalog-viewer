@@ -29,15 +29,15 @@ export function GeometryDisplay({ geometry, bbox }: GeometryDisplayProps) {
 
       if ((g.type === 'Polygon' || g.type === 'MultiLineString') && Array.isArray(g.coordinates)) {
         const coords = g.coordinates.flat(2);
-        const lons = coords.filter((_, i) => i % 2 === 0);
-        const lats = coords.filter((_, i) => i % 2 === 1);
+        const lons = coords.filter((_: any, i: number) => i % 2 === 0);
+        const lats = coords.filter((_: any, i: number) => i % 2 === 1);
         return [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)];
       }
 
       if (g.type === 'MultiPolygon' && Array.isArray(g.coordinates)) {
         const coords = g.coordinates.flat(3);
-        const lons = coords.filter((_, i) => i % 2 === 0);
-        const lats = coords.filter((_, i) => i % 2 === 1);
+        const lons = coords.filter((_: any, i: number) => i % 2 === 0);
+        const lats = coords.filter((_: any, i: number) => i % 2 === 1);
         return [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)];
       }
     } catch {
@@ -96,7 +96,7 @@ export function GeometryDisplay({ geometry, bbox }: GeometryDisplayProps) {
             <span className="geometry-type-value">{geometryType}</span>
           </div>
         )}
-        {geometry && (
+        {geometry !== undefined && (
           <details className="geometry-details">
             <summary className="geometry-summary">View GeoJSON</summary>
             <pre className="geometry-json">
@@ -110,8 +110,9 @@ export function GeometryDisplay({ geometry, bbox }: GeometryDisplayProps) {
         className="bbox-map"
         viewBox="0 0 360 180"
         preserveAspectRatio="xMidYMid meet"
-        title="Bounding box visualization"
+        aria-label="Bounding box visualization"
       >
+        <title>Bounding box visualization</title>
         <defs>
           <pattern id="latGrid" x="30" y="0" width="30" height="180" patternUnits="userSpaceOnUse">
             <line x1="0" y1="0" x2="0" y2="180" stroke="#ddd" strokeWidth="0.5" />

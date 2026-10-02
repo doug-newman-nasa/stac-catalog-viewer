@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { JSX } from 'react';
 import { useCollectionSearch } from '../hooks/useCollectionSearch';
 import { CollectionSearch } from '../components/CollectionSearch';
 import { resolveHref, getSearchLink } from '../lib/stac';

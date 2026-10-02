@@ -6,7 +6,6 @@ interface LicenseDisplayProps {
 
 export function LicenseDisplay({ license }: LicenseDisplayProps) {
   const isLicenseUrl = license.startsWith('http://') || license.startsWith('https://');
-  const isSpdxId = /^[A-Za-z0-9\-\.]+(\s+OR\s+[A-Za-z0-9\-\.]+)*$/.test(license);
 
   // Map common SPDX license IDs to full names
   const spdxNames: Record<string, string> = {

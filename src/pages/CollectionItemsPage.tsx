@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { JSX } from 'react';
 import { useStacItemsSearch } from '../hooks/useStacItemsSearch';
 import { ItemSearch } from '../components/ItemSearch';
 import { ExtentDisplay } from '../components/ExtentDisplay';
@@ -133,7 +134,7 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
                       {(item.geometry || item.bbox) && <GeometryDisplay geometry={item.geometry} bbox={item.bbox} />}
                       {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} />}
                       {itemExtent && <ExtentDisplay extent={itemExtent} />}
-                      {item.assets && <AssetLinks assets={item.assets} />}
+                      {item.assets && <AssetLinks assets={item.assets as Record<string, any>} />}
                       <StorageDisplay data={item} />
                       <LinksDisplay links={getItemOtherLinks(item)} />
                     </div>
