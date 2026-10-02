@@ -64,6 +64,32 @@ export function GeometryDisplay({ geometry, bbox }: GeometryDisplayProps) {
   const geometryType = geometry ? getGeometryType(geometry) : null;
   const hasValidBbox = displayBbox && displayBbox.length >= 4;
 
+  const calculateViewBox = (): string => {
+    if (!hasValidBbox) {
+      return '0 0 360 180';
+    }
+
+    const svgWest = (west + 180) % 360;
+    const svgEast = (east + 180) % 360;
+    const svgNorth = 90 - north;
+    const svgSouth = 90 - south;
+
+    let svgWidth = svgEast - svgWest;
+    let svgHeight = svgSouth - svgNorth;
+
+    if (svgWidth <= 0) svgWidth = 1;
+    if (svgHeight <= 0) svgHeight = 1;
+
+    const padding = Math.max(svgWidth, svgHeight) * 0.15;
+
+    const viewBoxX = Math.max(0, svgWest - padding);
+    const viewBoxY = Math.max(0, svgNorth - padding);
+    const viewBoxWidth = Math.min(360, svgWidth + padding * 2);
+    const viewBoxHeight = Math.min(180, svgHeight + padding * 2);
+
+    return `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`;
+  };
+
   return (
     <div className="geometry-display">
       <button
@@ -121,7 +147,7 @@ export function GeometryDisplay({ geometry, bbox }: GeometryDisplayProps) {
 
           <svg
             className="bbox-map"
-            viewBox="0 0 360 180"
+            viewBox={calculateViewBox()}
             preserveAspectRatio="xMidYMid meet"
             aria-label="Bounding box visualization"
           >
