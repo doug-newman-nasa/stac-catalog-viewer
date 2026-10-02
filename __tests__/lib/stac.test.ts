@@ -46,7 +46,7 @@ describe('stac utilities', () => {
 
       await expect(
         fetchStacCatalog('https://example.com/catalog.json')
-      ).rejects.toThrow('Invalid STAC Catalog: missing type or links');
+      ).rejects.toThrow(/Invalid STAC Catalog:.*The parent URL may not point to a STAC catalog/);
     });
   });
 

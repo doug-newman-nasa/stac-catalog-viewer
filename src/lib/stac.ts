@@ -20,8 +20,11 @@ export async function fetchStacCatalog(url: string): Promise<StacCatalog> {
     logger.logResponse(url, response.status, duration, { dataType: typeof data });
 
     if (!data.type || !data.links) {
-      const error = 'Invalid STAC Catalog: missing type or links';
-      logger.logError('Invalid catalog response', error, { url, hasType: !!data.type, hasLinks: !!data.links });
+      const details = [];
+      if (!data.type) details.push('missing "type"');
+      if (!data.links) details.push('missing "links"');
+      const error = `Invalid STAC Catalog: ${details.join(' and ')}. The parent URL may not point to a STAC catalog.`;
+      logger.logError('Invalid catalog response', error, { url, hasType: !!data.type, hasLinks: !!data.links, dataKeys: Object.keys(data || {}) });
       throw new Error(error);
     }
 

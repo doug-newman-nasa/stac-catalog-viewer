@@ -82,7 +82,9 @@ describe('ParentNavigation', () => {
 
     const button = screen.getByRole('button');
     expect(button).toHaveClass('parent-navigation-button');
-    expect(button).toHaveAttribute('title', 'Navigate to parent catalog: Parent Catalog');
+    const title = button.getAttribute('title');
+    expect(title).toContain('Navigate to parent catalog: Parent Catalog');
+    expect(title).toContain('Note: Some parent URLs may not be STAC catalogs');
   });
 
   it('handles relative parent hrefs', () => {
@@ -127,7 +129,8 @@ describe('ParentNavigation', () => {
     );
 
     const button = screen.getByRole('button');
-    expect(button).toHaveAttribute('title', 'Navigate to parent catalog: New Parent Catalog');
+    const title = button.getAttribute('title');
+    expect(title).toContain('Navigate to parent catalog: New Parent Catalog');
     expect(screen.getByText('New Parent Catalog')).toBeInTheDocument();
   });
 });

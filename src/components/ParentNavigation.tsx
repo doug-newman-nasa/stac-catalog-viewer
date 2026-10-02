@@ -20,7 +20,7 @@ export function ParentNavigation({
       <button
         onClick={handleClick}
         className="parent-navigation-button"
-        title={`Navigate to parent catalog: ${parentLink.title || 'parent'}`}
+        title={`Navigate to parent catalog: ${parentLink.title || 'parent'}. Note: Some parent URLs may not be STAC catalogs (e.g., provider landing pages).`}
       >
         <span className="parent-navigation-icon">↑</span>
         <span className="parent-navigation-text">
