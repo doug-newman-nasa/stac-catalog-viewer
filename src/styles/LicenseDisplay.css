@@ -1,0 +1,30 @@
+.license-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--color-light-bg, #f8f9fa);
+  border-left: 4px solid var(--color-accent, #6b5acd);
+  border-radius: 4px;
+}
+
+.license-label {
+  font-weight: 600;
+  color: var(--color-text, #333);
+  white-space: nowrap;
+}
+
+.license-link {
+  color: var(--color-primary, #0066cc);
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.license-link:hover {
+  text-decoration: underline;
+}
+
+.license-text {
+  color: var(--color-text, #333);
+  word-break: break-word;
+}

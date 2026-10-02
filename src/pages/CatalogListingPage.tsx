@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { JSX } from 'react';
 import { Link } from 'react-router-dom';
 import { resolveHref } from '../lib/stac';
 import { getPaginatedData, getTotalPages, PAGE_SIZE_OPTIONS } from '../lib/pagination';

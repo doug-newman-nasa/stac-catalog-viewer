@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import type { JSX } from 'react';
 import { useStacItemsSearch } from '../hooks/useStacItemsSearch';
 import { ItemSearch } from '../components/ItemSearch';
 import { ExtentDisplay } from '../components/ExtentDisplay';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
 import { AssetLinks } from '../components/AssetLinks';
+import { GeometryDisplay } from '../components/GeometryDisplay';
+import { DatetimeDisplay } from '../components/DatetimeDisplay';
 import { StorageDisplay } from '../components/StorageDisplay';
 import { LinksDisplay } from '../components/LinksDisplay';
 import { resolveHref, getItemBrowseLinks, getItemBrowseAssets, getItemOtherLinks } from '../lib/stac';
@@ -124,14 +127,26 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
                       type: asset.type,
                     })),
                   ];
+                  const datetime = item.properties?.datetime as string | null | undefined;
+                  const startDatetime = item.properties?.start_datetime as string | null | undefined;
+                  const endDatetime = item.properties?.end_datetime as string | null | undefined;
+
                   return (
                     <div key={item.id} className="item-card">
                       <div className="item-card-header">
                         <span className="item-link-title">{item.id}</span>
                       </div>
+                      {(datetime || startDatetime || endDatetime) && (
+                        <DatetimeDisplay
+                          datetime={datetime}
+                          startDatetime={startDatetime}
+                          endDatetime={endDatetime}
+                        />
+                      )}
+                      {(item.geometry || item.bbox) && <GeometryDisplay geometry={item.geometry} bbox={item.bbox} />}
                       {browseImages.length > 0 && <BrowseImagesDisplay images={browseImages} />}
                       {itemExtent && <ExtentDisplay extent={itemExtent} />}
-                      {item.assets && <AssetLinks assets={item.assets} />}
+                      {item.assets && <AssetLinks assets={item.assets as Record<string, any>} />}
                       <StorageDisplay data={item} />
                       <LinksDisplay links={getItemOtherLinks(item)} />
                     </div>

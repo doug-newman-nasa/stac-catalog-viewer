@@ -70,7 +70,7 @@ function extractBBoxFromGeometry(geometry: unknown): number[] | undefined {
   return undefined;
 }
 
-function calculateBBoxFromCoordinates(coords: Array<[number, number]>): number[] {
+function calculateBBoxFromCoordinates(coords: Array<[number, number]>): number[] | undefined {
   if (!coords || coords.length === 0) {
     return undefined;
   }
