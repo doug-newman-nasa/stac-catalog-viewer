@@ -21,9 +21,9 @@ export function BrowseImagesDisplay({ images, baseUrl }: BrowseImagesDisplayProp
   };
 
   return (
-    <div className="browse-images-display">
-      <h4 className="browse-images-title">Browse Images</h4>
-      <div className="browse-images-grid">
+    <section className="browse-images-display" aria-labelledby="browse-images-heading">
+      <h3 id="browse-images-heading" className="browse-images-title">Browse Images</h3>
+      <div className="browse-images-grid" role="region" aria-label={`${images.length} available browse images`}>
         {images.map((image, idx) => (
           <div key={idx} className="browse-image-item">
             <a
@@ -31,7 +31,7 @@ export function BrowseImagesDisplay({ images, baseUrl }: BrowseImagesDisplayProp
               target="_blank"
               rel="noopener noreferrer"
               className="browse-image-link"
-              title={image.title || 'Browse image'}
+              aria-label={image.title ? `View ${image.title}` : `View browse image ${idx + 1}`}
             >
               <img
                 src={resolveImageUrl(image.href)}
@@ -51,6 +51,6 @@ export function BrowseImagesDisplay({ images, baseUrl }: BrowseImagesDisplayProp
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

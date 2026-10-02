@@ -1,8 +1,40 @@
+.skip-to-main {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #667eea;
+  color: white;
+  padding: 8px 16px;
+  text-decoration: none;
+  border-radius: 0 0 4px 0;
+  z-index: 100;
+}
+
+.skip-to-main:focus {
+  top: 0;
+}
+
 .catalog-page {
   position: relative;
   max-width: 900px;
   margin: 0 auto;
   padding: 24px 16px;
+}
+
+.catalog-page:focus {
+  outline: none;
+}
+
+button:focus,
+a:focus {
+  outline: 3px solid #667eea;
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #667eea;
+  outline-offset: 2px;
 }
 
 .page-header {
