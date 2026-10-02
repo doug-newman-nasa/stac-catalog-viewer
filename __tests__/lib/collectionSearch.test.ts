@@ -111,6 +111,73 @@ describe('Collection Search', () => {
       expect(result.get('limit')).toBe('25');
       expect(result.get('q')).toBe('test');
     });
+
+    it('should build filter parameter', () => {
+      const params: CollectionSearchParams = {
+        filter: "start_datetime >= '2020-01-01'",
+      };
+
+      const result = buildCollectionSearchParams(params);
+      expect(result.get('filter')).toBe("start_datetime >= '2020-01-01'");
+    });
+
+    it('should build fields with included fields', () => {
+      const params: CollectionSearchParams = {
+        fields: [
+          { property: 'id' },
+          { property: 'title' },
+        ],
+      };
+
+      const result = buildCollectionSearchParams(params);
+      expect(result.get('fields')).toBe('+id,+title');
+    });
+
+    it('should build fields with excluded fields', () => {
+      const params: CollectionSearchParams = {
+        fields: [
+          { property: 'description', exclude: true },
+          { property: 'keywords', exclude: true },
+        ],
+      };
+
+      const result = buildCollectionSearchParams(params);
+      expect(result.get('fields')).toBe('-description,-keywords');
+    });
+
+    it('should build fields with both included and excluded (excluded overwrites)', () => {
+      const params: CollectionSearchParams = {
+        fields: [
+          { property: 'id' },
+          { property: 'title' },
+          { property: 'description', exclude: true },
+        ],
+      };
+
+      const result = buildCollectionSearchParams(params);
+      // When both are present, excluded fields overwrites included (last one wins)
+      expect(result.get('fields')).toBe('-description');
+    });
+
+    it('should not set fields if empty array', () => {
+      const params: CollectionSearchParams = {
+        fields: [],
+      };
+
+      const result = buildCollectionSearchParams(params);
+      expect(result.get('fields')).toBeNull();
+    });
+
+    it('should build sort with default ascending direction', () => {
+      const params: CollectionSearchParams = {
+        sort: [
+          { property: 'title' },
+        ],
+      };
+
+      const result = buildCollectionSearchParams(params);
+      expect(result.get('sortby')).toBe('+title');
+    });
   });
 
   describe('searchCollections', () => {
@@ -344,6 +411,35 @@ describe('Collection Search', () => {
       const result = sortCollections(collections, []);
 
       expect(result).toEqual(collections);
+    });
+
+    it('should maintain order when all sort values are equal', () => {
+      const collection1 = { ...mockCollection, id: 'a', title: 'Same Title' };
+      const collection2 = { ...mockCollection, id: 'b', title: 'Same Title' };
+      const collections = [collection1, collection2];
+
+      const result = sortCollections(collections, [
+        { property: 'title', direction: 'asc' },
+      ]);
+
+      // When titles are equal, should return 0 and maintain order
+      expect(result[0].id).toBe('a');
+      expect(result[1].id).toBe('b');
+    });
+
+    it('should use secondary sort key when primary is equal', () => {
+      const collection1 = { ...mockCollection, id: 'z', title: 'Same Title' };
+      const collection2 = { ...mockCollection, id: 'a', title: 'Same Title' };
+      const collections = [collection1, collection2];
+
+      const result = sortCollections(collections, [
+        { property: 'title', direction: 'asc' },
+        { property: 'id', direction: 'asc' },
+      ]);
+
+      // Title equal, so sort by id ascending
+      expect(result[0].id).toBe('a');
+      expect(result[1].id).toBe('z');
     });
   });
 
