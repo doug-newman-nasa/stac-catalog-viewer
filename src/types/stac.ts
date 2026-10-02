@@ -37,6 +37,7 @@ export interface StacCatalog {
   extent?: Extent;
   assets?: Record<string, StacAsset>;
   keywords?: string[];
+  license?: string;
   [key: string]: unknown;
 }
 
