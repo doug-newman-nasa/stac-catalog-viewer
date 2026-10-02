@@ -7,7 +7,7 @@ import { AssetLinks } from '../components/AssetLinks';
 import { StorageDisplay } from '../components/StorageDisplay';
 import { LinksDisplay } from '../components/LinksDisplay';
 import { resolveHref, getItemBrowseLinks, getItemBrowseAssets, getItemOtherLinks } from '../lib/stac';
-import { applyItemSearchParams, collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
+import { collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
 import { extractItemExtent } from '../lib/itemExtent';
 import { getTotalPages, getPaginatedData } from '../lib/pagination';
 import type { StacLink } from '../types/stac';
@@ -49,19 +49,6 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
     <div className="section">
       <div className="section-header">
         <h3 className="section-title">Items</h3>
-        <div className="section-controls">
-          {itemsSearchLink && url && (
-            <a
-              href={`${applyItemSearchParams(resolveHref(url, itemsSearchLink.href), itemSearchParams)}?limit=${itemPageSize}&offset=${(itemsSearch.page - 1) * itemPageSize}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="view-items-link"
-              title="View items with current parameters"
-            >
-              View Items Endpoint ↗
-            </a>
-          )}
-        </div>
       </div>
 
       {itemsSearchLink ? (

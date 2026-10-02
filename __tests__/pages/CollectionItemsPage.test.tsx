@@ -94,46 +94,6 @@ describe('CollectionItemsPage', () => {
     expect(screen.queryByRole('button', { name: /Search & Filter Items/ })).not.toBeInTheDocument();
   });
 
-  it('should apply search params to View Items Endpoint link', async () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      json: async () => mockItemCollection,
-    } as Response);
-
-    const user = userEvent.setup();
-    render(
-      <CollectionItemsPage
-        url="https://example.com/collections/test"
-        itemLinks={[]}
-        itemsSearchLink={mockItemsLink}
-      />
-    );
-
-    await waitFor(() => {
-      const toggle = screen.getByRole('button', { name: /Search & Filter Items/ });
-      expect(toggle).toBeInTheDocument();
-    });
-
-    // Open advanced filters
-    const toggle = screen.getByRole('button', { name: /Search & Filter Items/ });
-    await user.click(toggle);
-
-    // Enter search params
-    const bboxInput = screen.getByPlaceholderText('-180, -90, 180, 90') as HTMLInputElement;
-    await user.type(bboxInput, '-180,-90,180,90');
-
-    // Submit search
-    const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
-    await user.click(submitButton);
-
-    // Wait for the fetch to complete with new params
-    await waitFor(() => {
-      const viewLink = screen.getByTitle('View items with current parameters');
-      const href = viewLink.getAttribute('href');
-      expect(href).toContain('bbox=-180%2C-90%2C180%2C90');
-    });
-  });
-
   it('should render static item links when itemsSearchLink is not present', () => {
     render(
       <CollectionItemsPage
