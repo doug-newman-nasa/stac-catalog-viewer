@@ -144,7 +144,7 @@ export function ItemSearch({
 
         <div className="search-controls">
           <button type="submit" disabled={loading} className="search-button">
-            {loading ? 'Searching...' : 'Apply Filters'}
+            {loading ? 'Searching...' : 'Search'}
           </button>
           {(searchParams.bbox || searchParams.bboxString || searchParams.datetime || searchParams.ids || searchParams.idsString) && (
             <button

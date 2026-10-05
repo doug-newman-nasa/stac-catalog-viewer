@@ -136,7 +136,7 @@ describe('ItemSearch', () => {
     const toggleButton = screen.getByRole('button', { name: /Search & Filter Items/ });
     await user.click(toggleButton);
 
-    const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
+    const submitButton = screen.getByRole('button', { name: 'Search' });
     await user.click(submitButton);
 
     expect(mockOnSearch).toHaveBeenCalledWith(
@@ -163,7 +163,7 @@ describe('ItemSearch', () => {
     const toggleButton = screen.getByRole('button', { name: /Search & Filter Items/ });
     await user.click(toggleButton);
 
-    const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
+    const submitButton = screen.getByRole('button', { name: 'Search' });
     await user.click(submitButton);
 
     expect(mockOnSearch).not.toHaveBeenCalled();
@@ -204,7 +204,7 @@ describe('ItemSearch', () => {
     const toggleButton = screen.getByRole('button', { name: /Search & Filter Items/ });
     await user.click(toggleButton);
 
-    const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
+    const submitButton = screen.getByRole('button', { name: 'Search' });
     await user.click(submitButton);
 
     expect(mockOnSearch).toHaveBeenCalledWith(
@@ -302,7 +302,7 @@ describe('ItemSearch', () => {
     const toggleButton = screen.getByRole('button', { name: /Search & Filter Items/ });
     await user.click(toggleButton);
 
-    const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
+    const submitButton = screen.getByRole('button', { name: 'Search' });
     await user.click(submitButton);
 
     expect(mockOnSearch).toHaveBeenCalledWith(
@@ -329,7 +329,7 @@ describe('ItemSearch', () => {
     const toggleButton = screen.getByRole('button', { name: /Search & Filter Items/ });
     await user.click(toggleButton);
 
-    const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
+    const submitButton = screen.getByRole('button', { name: 'Search' });
     await user.click(submitButton);
 
     expect(mockOnSearch).toHaveBeenCalledWith(
