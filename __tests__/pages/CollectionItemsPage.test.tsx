@@ -1007,4 +1007,181 @@ describe('CollectionItemsPage', () => {
       expect(screen.getByText('item1')).toBeInTheDocument();
     });
   });
+
+  it('should retry failed search', async () => {
+    const user = userEvent.setup();
+    const error = new Error('Network error');
+    const successResponse = {
+      type: 'FeatureCollection',
+      features: [{ type: 'Feature', id: 'item1', geometry: null, properties: {}, links: [] }],
+      links: [{ rel: 'self', href: 'https://example.com/items' }],
+      numberMatched: 1,
+      numberReturned: 1,
+    };
+
+    vi.mocked(fetch)
+      .mockRejectedValueOnce(error)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => successResponse,
+      } as Response);
+
+    render(
+      <CollectionItemsPage
+        url="https://example.com/collections/test"
+        itemLinks={[]}
+        itemsSearchLink={mockItemsLink}
+      />
+    );
+
+    // Click Apply Filters - should fail
+    const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
+    await user.click(submitButton);
+
+    // Wait for error and retry button
+    await waitFor(() => {
+      const retryButton = screen.getByRole('button', { name: /Retry/ });
+      expect(retryButton).toBeInTheDocument();
+    });
+
+    // Click retry
+    const retryButton = screen.getByRole('button', { name: /Retry/ });
+    await user.click(retryButton);
+
+    // Should now show items
+    await waitFor(() => {
+      expect(screen.getByText('item1')).toBeInTheDocument();
+    });
+  });
+
+  it('should handle items with only bbox geometry', async () => {
+    const user = userEvent.setup();
+    const itemWithBboxOnly = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          id: 'bbox-item',
+          bbox: [-10, -10, 10, 10],
+          geometry: null,
+          properties: {},
+          links: [{ rel: 'self', href: 'https://example.com/item' }],
+        },
+      ],
+      links: [{ rel: 'self', href: 'https://example.com/items' }],
+      numberMatched: 1,
+      numberReturned: 1,
+    };
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => itemWithBboxOnly,
+    } as Response);
+
+    render(
+      <CollectionItemsPage
+        url="https://example.com/collections/test"
+        itemLinks={[]}
+        itemsSearchLink={mockItemsLink}
+      />
+    );
+
+    // Click Apply Filters
+    const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
+    await user.click(submitButton);
+
+    // Should render item
+    await waitFor(() => {
+      expect(screen.getByText('bbox-item')).toBeInTheDocument();
+    });
+  });
+
+  it('should handle item with assets but no geometry', async () => {
+    const user = userEvent.setup();
+    const itemWithAssets = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          id: 'asset-item',
+          geometry: null,
+          properties: {},
+          assets: {
+            data: { href: 'https://example.com/data.tif', type: 'image/tiff' },
+          },
+          links: [{ rel: 'self', href: 'https://example.com/item' }],
+        },
+      ],
+      links: [{ rel: 'self', href: 'https://example.com/items' }],
+      numberMatched: 1,
+      numberReturned: 1,
+    };
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => itemWithAssets,
+    } as Response);
+
+    render(
+      <CollectionItemsPage
+        url="https://example.com/collections/test"
+        itemLinks={[]}
+        itemsSearchLink={mockItemsLink}
+      />
+    );
+
+    // Click Apply Filters
+    const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
+    await user.click(submitButton);
+
+    // Should render item
+    await waitFor(() => {
+      expect(screen.getByText('asset-item')).toBeInTheDocument();
+    });
+  });
+
+  it('should toggle advanced search filters', async () => {
+    const user = userEvent.setup();
+    const itemCollection = {
+      type: 'FeatureCollection',
+      features: [],
+      links: [{ rel: 'self', href: 'https://example.com/items' }],
+      numberMatched: 0,
+      numberReturned: 0,
+    };
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => itemCollection,
+    } as Response);
+
+    render(
+      <CollectionItemsPage
+        url="https://example.com/collections/test"
+        itemLinks={[]}
+        itemsSearchLink={mockItemsLink}
+      />
+    );
+
+    // Find toggle button
+    const toggle = screen.getByRole('button', { name: /Search & Filter Items/ });
+    expect(toggle).toBeInTheDocument();
+
+    // Advanced filters should not be visible initially
+    expect(screen.queryByPlaceholderText('-180, -90, 180, 90')).not.toBeInTheDocument();
+
+    // Click to expand
+    await user.click(toggle);
+
+    // Advanced filters should now be visible
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('-180, -90, 180, 90')).toBeInTheDocument();
+    });
+
+    // Click to collapse
+    await user.click(toggle);
+
+    // Advanced filters should be hidden again
+    expect(screen.queryByPlaceholderText('-180, -90, 180, 90')).not.toBeInTheDocument();
+  });
 });
