@@ -5,7 +5,7 @@ import { CollectionSearch } from '../components/CollectionSearch';
 import { resolveHref, getSearchLink } from '../lib/stac';
 import { getPaginatedData, getTotalPages } from '../lib/pagination';
 import type { CollectionSearchParams } from '../lib/collectionSearch';
-import type { StacCatalog } from '../types/stac';
+import type { StacCatalog, StacLink } from '../types/stac';
 import '../styles/CatalogPage.css';
 
 interface CollectionSearchResultsPageProps {
@@ -16,6 +16,10 @@ interface CollectionSearchResultsPageProps {
 }
 
 const RESULTS_PER_PAGE = 25;
+
+function getRelItemLinks(collection: StacCatalog): StacLink[] {
+  return collection.links?.filter((link) => link.rel === 'item') || [];
+}
 
 export function CollectionSearchResultsPage({
   url,
@@ -112,19 +116,36 @@ export function CollectionSearchResultsPage({
                   searchState.results,
                   collectionSearchPage,
                   RESULTS_PER_PAGE
-                ).map((collection) => (
-                  <div
-                    key={collection.id}
-                    onClick={() => handleCollectionSelect(collection)}
-                    className="child-link"
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="child-link-content">
-                      <span className="child-link-title">{collection.title || collection.id}</span>
+                ).map((collection) => {
+                  const itemLinks = getRelItemLinks(collection);
+                  return (
+                    <div key={collection.id} className="collection-result-card">
+                      <div
+                        onClick={() => handleCollectionSelect(collection)}
+                        className="child-link"
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className="child-link-content">
+                          <span className="child-link-title">{collection.title || collection.id}</span>
+                        </div>
+                        <span className="child-link-arrow">→</span>
+                      </div>
+                      {itemLinks.length > 0 && (
+                        <div className="rel-item-links">
+                          <div className="rel-item-links-label">rel=item links:</div>
+                          <ul className="rel-item-links-list">
+                            {itemLinks.map((link, index) => (
+                              <li key={`${collection.id}-item-${index}`} className="rel-item-link">
+                                <code className="rel-item-link-href">{link.href}</code>
+                                {link.title && <span className="rel-item-link-title">{link.title}</span>}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
-                    <span className="child-link-arrow">→</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {getTotalPages(searchState.results.length, RESULTS_PER_PAGE) > 1 && (
