@@ -68,6 +68,12 @@ export function CollectionSearch({
     onClearSearch();
   };
 
+  const isValidBbox = (bboxString: string): boolean => {
+    if (!bboxString) return true;
+    const parts = bboxString.split(',').map((v) => parseFloat(v.trim()));
+    return parts.length === 4 && parts.every((p) => !isNaN(p));
+  };
+
   const bboxValue = searchParams.bboxString || '';
 
   return (
@@ -148,7 +154,7 @@ export function CollectionSearch({
         </div>
       )}
 
-      {searchParams.bboxString && !searchParams.bbox && (
+      {searchParams.bboxString && !isValidBbox(searchParams.bboxString) && (
         <div className="error-message">
           <strong>Invalid bounding box:</strong> Please enter 4 comma-separated numbers (W, S, E, N)
         </div>
