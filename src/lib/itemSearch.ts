@@ -78,37 +78,3 @@ export function collectionSearchParamsToItemSearchParams(
     limit: collectionParams.limit,
   };
 }
-
-export function extractSearchParamsFromUrl(urlString: string): ItemSearchParams {
-  try {
-    const url = new URL(urlString);
-    const params: ItemSearchParams = {};
-
-    // Extract bbox parameter
-    const bboxParam = url.searchParams.get('bbox');
-    if (bboxParam) {
-      const bboxParts = bboxParam.split(',').map((v) => parseFloat(v.trim()));
-      if (bboxParts.length === 4 && bboxParts.every((p) => !isNaN(p))) {
-        params.bbox = bboxParts as [number, number, number, number];
-        params.bboxString = bboxParam;
-      }
-    }
-
-    // Extract datetime parameter
-    const datetimeParam = url.searchParams.get('datetime');
-    if (datetimeParam) {
-      params.datetime = datetimeParam;
-    }
-
-    // Extract ids parameter
-    const idsParam = url.searchParams.get('ids');
-    if (idsParam) {
-      params.ids = idsParam.split(',').map((id) => id.trim());
-      params.idsString = idsParam;
-    }
-
-    return params;
-  } catch {
-    return {};
-  }
-}

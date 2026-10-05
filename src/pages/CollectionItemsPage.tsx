@@ -10,7 +10,7 @@ import { DatetimeDisplay } from '../components/DatetimeDisplay';
 import { StorageDisplay } from '../components/StorageDisplay';
 import { LinksDisplay } from '../components/LinksDisplay';
 import { resolveHref, getItemBrowseLinks, getItemBrowseAssets, getItemOtherLinks } from '../lib/stac';
-import { collectionSearchParamsToItemSearchParams, extractSearchParamsFromUrl } from '../lib/itemSearch';
+import { collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
 import { extractItemExtent } from '../lib/itemExtent';
 import { getTotalPages, getPaginatedData } from '../lib/pagination';
 import type { StacLink } from '../types/stac';
@@ -30,23 +30,14 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
   const [itemCurrentPage, setItemCurrentPage] = useState(1);
 
   // Use rel=items link when available for item search/filter operations
-  // Resolve the items URL and extract any existing query parameters
+  // The rel=items URL may already contain query parameters (bbox, datetime, etc.) which are preserved
   const resolvedItemsHref = itemsSearchLink && url ? resolveHref(url, itemsSearchLink.href) : null;
 
-  // Initialize search params from collection search params or from rel=items URL parameters
-  const [itemSearchParams, setItemSearchParams] = useState<ItemSearchParams>(() => {
-    if (collectionSearchParams) {
-      return collectionSearchParamsToItemSearchParams(collectionSearchParams);
-    }
-    // If rel=items URL has query parameters (bbox, datetime, ids), extract and use them
-    if (resolvedItemsHref) {
-      const urlParams = extractSearchParamsFromUrl(resolvedItemsHref);
-      if (Object.keys(urlParams).length > 0) {
-        return urlParams;
-      }
-    }
-    return {};
-  });
+  // Initialize search params from collection search params only
+  // Do NOT extract from rel=items URL - it's used as-is, and search params are applied on top
+  const [itemSearchParams, setItemSearchParams] = useState<ItemSearchParams>(() =>
+    collectionSearchParams ? collectionSearchParamsToItemSearchParams(collectionSearchParams) : {}
+  );
 
   const itemsSearch = useStacItemsSearch(resolvedItemsHref, itemPageSize, itemSearchParams);
 

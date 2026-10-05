@@ -40,10 +40,11 @@ export function useStacItemsSearch(
   const fetchPage = async (href: string) => {
     setLoading(true);
     setError(null);
-    // Apply search parameters (bbox, datetime, ids) to the items URL
+    // Apply user-entered search parameters (bbox, datetime, ids) on top of the items URL
+    // The href may already contain query parameters from rel=items link - these are preserved
     const hrefWithSearchParams = applyItemSearchParams(href, searchParams);
     const url = withLimit(hrefWithSearchParams, pageSize);
-    logger.logInfo('Fetching items page with search parameters', { url, pageSize, searchParams });
+    logger.logInfo('Fetching items page', { url, pageSize, searchParams });
     try {
       const collection = await fetchItemCollection(url);
       setPageCache([collection]);
