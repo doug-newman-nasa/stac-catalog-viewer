@@ -17,8 +17,8 @@ interface CollectionSearchResultsPageProps {
 
 const RESULTS_PER_PAGE = 25;
 
-function getRelItemLinks(collection: StacCatalog): StacLink[] {
-  return collection.links?.filter((link) => link.rel === 'item') || [];
+function getRelItemsLinks(collection: StacCatalog): StacLink[] {
+  return collection.links?.filter((link) => link.rel === 'items') || [];
 }
 
 export function CollectionSearchResultsPage({
@@ -117,7 +117,7 @@ export function CollectionSearchResultsPage({
                   collectionSearchPage,
                   RESULTS_PER_PAGE
                 ).map((collection) => {
-                  const itemLinks = getRelItemLinks(collection);
+                  const itemsLinks = getRelItemsLinks(collection);
                   return (
                     <div key={collection.id} className="collection-result-card">
                       <div
@@ -130,14 +130,14 @@ export function CollectionSearchResultsPage({
                         </div>
                         <span className="child-link-arrow">→</span>
                       </div>
-                      {itemLinks.length > 0 && (
-                        <div className="rel-item-links">
-                          <div className="rel-item-links-label">rel=item links:</div>
-                          <ul className="rel-item-links-list">
-                            {itemLinks.map((link, index) => (
-                              <li key={`${collection.id}-item-${index}`} className="rel-item-link">
-                                <code className="rel-item-link-href">{link.href}</code>
-                                {link.title && <span className="rel-item-link-title">{link.title}</span>}
+                      {itemsLinks.length > 0 && (
+                        <div className="rel-items-links">
+                          <div className="rel-items-links-label">rel=items links:</div>
+                          <ul className="rel-items-links-list">
+                            {itemsLinks.map((link, index) => (
+                              <li key={`${collection.id}-items-${index}`} className="rel-items-link">
+                                <code className="rel-items-link-href">{link.href}</code>
+                                {link.title && <span className="rel-items-link-title">{link.title}</span>}
                               </li>
                             ))}
                           </ul>

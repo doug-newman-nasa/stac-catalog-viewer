@@ -645,7 +645,7 @@ a:focus-visible {
   margin-bottom: 16px;
 }
 
-.rel-item-links {
+.rel-items-links {
   margin-top: 12px;
   padding: 12px;
   background: #f9f9f9;
@@ -654,24 +654,24 @@ a:focus-visible {
   font-size: 12px;
 }
 
-.rel-item-links-label {
+.rel-items-links-label {
   font-weight: 600;
   color: #333;
   margin-bottom: 8px;
 }
 
-.rel-item-links-list {
+.rel-items-links-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.rel-item-link {
+.rel-items-link {
   margin-bottom: 8px;
   word-break: break-all;
 }
 
-.rel-item-link-href {
+.rel-items-link-href {
   display: block;
   background: white;
   padding: 6px;
@@ -682,7 +682,7 @@ a:focus-visible {
   border: 1px solid #e0e0e0;
 }
 
-.rel-item-link-title {
+.rel-items-link-title {
   display: block;
   margin-top: 4px;
   color: #666;
