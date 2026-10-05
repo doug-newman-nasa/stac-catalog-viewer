@@ -159,13 +159,13 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
             </div>
           )}
 
-          {!itemsSearch.loading && !itemsSearch.error && itemsSearch.items.length === 0 && (!itemsSearch.numberMatched || itemsSearch.numberMatched === 0) && (
+          {hasAppliedFilters && !itemsSearch.loading && !itemsSearch.error && itemsSearch.items.length === 0 && (!itemsSearch.numberMatched || itemsSearch.numberMatched === 0) && (
             <div className="item-search-no-results">
               <p className="no-results-message">No items found</p>
             </div>
           )}
 
-          {!itemsSearch.loading && !itemsSearch.error && (itemsSearch.items.length > 0 || (itemsSearch.numberMatched && itemsSearch.numberMatched > 0)) && (
+          {hasAppliedFilters && !itemsSearch.loading && !itemsSearch.error && (itemsSearch.items.length > 0 || (itemsSearch.numberMatched && itemsSearch.numberMatched > 0)) && (
             <>
               <div className="pagination pagination-top">
                 <span className="page-info">

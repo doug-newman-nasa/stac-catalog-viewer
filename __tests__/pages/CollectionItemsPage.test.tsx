@@ -110,6 +110,7 @@ describe('CollectionItemsPage', () => {
   });
 
   it('should show no results message when search returns empty', async () => {
+    const user = userEvent.setup();
     const emptyCollection = {
       type: 'FeatureCollection',
       features: [],
@@ -130,6 +131,16 @@ describe('CollectionItemsPage', () => {
         itemsSearchLink={mockItemsLink}
       />
     );
+
+    // Wait for ItemSearch component to be available
+    await waitFor(() => {
+      const toggle = screen.getByRole('button', { name: /Search & Filter Items/ });
+      expect(toggle).toBeInTheDocument();
+    });
+
+    // Click Apply Filters to start the search
+    const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
+    await user.click(submitButton);
 
     await waitFor(() => {
       expect(screen.getByText('No items found')).toBeInTheDocument();
