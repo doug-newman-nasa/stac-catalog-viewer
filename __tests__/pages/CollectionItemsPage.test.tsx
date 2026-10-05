@@ -1184,4 +1184,106 @@ describe('CollectionItemsPage', () => {
     // Advanced filters should be hidden again
     expect(screen.queryByPlaceholderText('-180, -90, 180, 90')).not.toBeInTheDocument();
   });
+
+  it('should display proper page numbers for static items on each page', () => {
+    const user = userEvent.setup();
+    const manyItemLinks: StacLink[] = Array.from({ length: 30 }, (_, i) => ({
+      rel: 'item',
+      href: `https://example.com/items/item${i + 1}`,
+      title: `Item ${i + 1}`,
+    }));
+
+    render(
+      <CollectionItemsPage
+        url="https://example.com/collections/test"
+        itemLinks={manyItemLinks}
+        itemsSearchLink={undefined}
+      />
+    );
+
+    // Should show page 1 of 2 (both top and bottom pagination)
+    const pageTexts = screen.getAllByText('Page 1 of 2');
+    expect(pageTexts.length).toBeGreaterThan(0);
+
+    // Items 1-25 should be visible
+    expect(screen.getByText('Item 1')).toBeInTheDocument();
+    expect(screen.getByText('Item 25')).toBeInTheDocument();
+    expect(screen.queryByText('Item 26')).not.toBeInTheDocument();
+  });
+
+  it('should show correct pagination info on second page of static items', async () => {
+    const user = userEvent.setup();
+    const manyItemLinks: StacLink[] = Array.from({ length: 30 }, (_, i) => ({
+      rel: 'item',
+      href: `https://example.com/items/item${i + 1}`,
+      title: `Item ${i + 1}`,
+    }));
+
+    render(
+      <CollectionItemsPage
+        url="https://example.com/collections/test"
+        itemLinks={manyItemLinks}
+        itemsSearchLink={undefined}
+      />
+    );
+
+    // Go to next page
+    const nextButtons = screen.getAllByRole('button', { name: /Next/ });
+    await user.click(nextButtons[0]);
+
+    // Should show page 2 of 2 (both top and bottom pagination)
+    const pageTexts = screen.getAllByText('Page 2 of 2');
+    expect(pageTexts.length).toBeGreaterThan(0);
+
+    // Item 26-30 should be visible
+    expect(screen.getByText('Item 26')).toBeInTheDocument();
+    expect(screen.getByText('Item 30')).toBeInTheDocument();
+    // Items from page 1 should not be visible
+    expect(screen.queryByText('Item 1')).not.toBeInTheDocument();
+  });
+
+  it('should render API search results with pagination info but without next link', async () => {
+    const user = userEvent.setup();
+    const singlePageResults = {
+      type: 'FeatureCollection',
+      features: Array.from({ length: 10 }, (_, i) => ({
+        type: 'Feature',
+        id: `item${i + 1}`,
+        geometry: null,
+        properties: {},
+      })),
+      links: [{ rel: 'self', href: 'https://example.com/items' }],
+      numberMatched: 10,
+      numberReturned: 10,
+    };
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => singlePageResults,
+    } as Response);
+
+    render(
+      <CollectionItemsPage
+        url="https://example.com/collections/test"
+        itemLinks={[]}
+        itemsSearchLink={mockItemsLink}
+      />
+    );
+
+    // Click Apply Filters
+    const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
+    await user.click(submitButton);
+
+    // Should show pagination with item count but no next
+    await waitFor(() => {
+      const pageInfos = screen.getAllByText(/Page 1.*~10 items/);
+      expect(pageInfos.length).toBeGreaterThan(0);
+    });
+
+    // Next button should be disabled
+    const nextButtons = screen.getAllByRole('button', { name: /Next/ });
+    nextButtons.forEach((btn) => {
+      expect(btn).toBeDisabled();
+    });
+  });
 });
