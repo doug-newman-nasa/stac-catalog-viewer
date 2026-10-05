@@ -17,10 +17,6 @@ interface CollectionSearchResultsPageProps {
 
 const RESULTS_PER_PAGE = 25;
 
-function getRelItemsLinks(collection: StacCatalog): StacLink[] {
-  return collection.links?.filter((link) => link.rel === 'items') || [];
-}
-
 export function CollectionSearchResultsPage({
   url,
   catalogData,
@@ -116,47 +112,19 @@ export function CollectionSearchResultsPage({
                   searchState.results,
                   collectionSearchPage,
                   RESULTS_PER_PAGE
-                ).map((collection) => {
-                  const itemsLinks = getRelItemsLinks(collection);
-                  return (
-                    <div key={collection.id} className="collection-result-card">
-                      <div
-                        onClick={() => handleCollectionSelect(collection)}
-                        className="child-link"
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <div className="child-link-content">
-                          <span className="child-link-title">{collection.title || collection.id}</span>
-                        </div>
-                        <span className="child-link-arrow">→</span>
-                      </div>
-                      {itemsLinks.length > 0 && (
-                        <div className="rel-items-links">
-                          <div className="rel-items-links-label">rel=items links:</div>
-                          <ul className="rel-items-links-list">
-                            {itemsLinks.map((link, index) => {
-                              const itemsUrl = resolveHref(url, link.href);
-                              return (
-                                <li key={`${collection.id}-items-${index}`} className="rel-items-link">
-                                  <a
-                                    href={itemsUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="rel-items-link-href"
-                                    title={`Open items endpoint: ${link.title || 'rel=items'}`}
-                                  >
-                                    {link.href}
-                                  </a>
-                                  {link.title && <span className="rel-items-link-title">{link.title}</span>}
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      )}
+                ).map((collection) => (
+                  <div
+                    key={collection.id}
+                    onClick={() => handleCollectionSelect(collection)}
+                    className="child-link"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="child-link-content">
+                      <span className="child-link-title">{collection.title || collection.id}</span>
                     </div>
-                  );
-                })}
+                    <span className="child-link-arrow">→</span>
+                  </div>
+                ))}
               </div>
 
               {getTotalPages(searchState.results.length, RESULTS_PER_PAGE) > 1 && (
