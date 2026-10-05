@@ -247,49 +247,6 @@ describe('CatalogPage', () => {
     });
   });
 
-  describe('parent navigation', () => {
-    const mockCatalogWithParent: StacCatalog = {
-      type: 'Catalog',
-      stac_version: '1.0.0',
-      id: 'test-catalog',
-      description: 'Test',
-      links: [{ rel: 'parent', href: 'parent.json' }],
-    };
-
-    it('should display parent navigation button when parent link exists', () => {
-      mockUseStacNode.mockReturnValue({
-        data: mockCatalogWithParent,
-        loading: false,
-        error: null,
-        retry: vi.fn(),
-      });
-
-      renderWithRouter(<CatalogPage />, ['/catalog?url=https://example.com/catalog.json']);
-
-      expect(screen.getByText('ParentNavigation')).toBeInTheDocument();
-    });
-
-    it('should not display parent navigation button when no parent link', () => {
-      const mockCatalog: StacCatalog = {
-        type: 'Catalog',
-        stac_version: '1.0.0',
-        id: 'test-catalog',
-        description: 'Test',
-        links: [],
-      };
-
-      mockUseStacNode.mockReturnValue({
-        data: mockCatalog,
-        loading: false,
-        error: null,
-        retry: vi.fn(),
-      });
-
-      renderWithRouter(<CatalogPage />, ['/catalog?url=https://example.com/catalog.json']);
-
-      expect(screen.queryByText('ParentNavigation')).not.toBeInTheDocument();
-    });
-  });
 
   describe('collections endpoint', () => {
     const mockCollectionsEndpoint: StacItemCollection = {
@@ -592,29 +549,6 @@ describe('CatalogPage', () => {
       expect(mockUseStacNode).toHaveBeenCalled();
     });
 
-    it('should handle parent navigation when parent link is clicked', () => {
-      const mockCatalogWithParent: StacCatalog = {
-        type: 'Catalog',
-        stac_version: '1.0.0',
-        id: 'test-catalog',
-        description: 'Test',
-        links: [{ rel: 'parent', href: 'parent.json' }],
-      };
-
-      mockUseStacNode.mockReturnValue({
-        data: mockCatalogWithParent,
-        loading: false,
-        error: null,
-        retry: vi.fn(),
-      });
-
-      renderWithRouter(<CatalogPage />, ['/catalog?url=https://example.com/catalog.json']);
-
-      const parentNavButton = screen.getByText('ParentNavigation');
-      fireEvent.click(parentNavButton);
-
-      expect(mockUseStacNode).toHaveBeenCalled();
-    });
   });
 
   describe('URL copy behavior', () => {
