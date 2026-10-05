@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { JSX } from 'react';
 import { useStacItemsSearch } from '../hooks/useStacItemsSearch';
 import { ItemSearch } from '../components/ItemSearch';
@@ -76,6 +76,31 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
 
     return params;
   });
+
+  // Sync itemSearchParams with collectionSearchParams when it changes
+  // This ensures that if collection search params are updated after navigation,
+  // the item search will use the updated params (including bbox from search)
+  useEffect(() => {
+    if (collectionSearchParams) {
+      const updatedParams = collectionSearchParamsToItemSearchParams(collectionSearchParams);
+      // Merge with any parameters already in the rel=items URL
+      if (resolvedItemsHref && !updatedParams.bbox) {
+        try {
+          const relItemsUrl = new URL(resolvedItemsHref);
+          const bboxStr = relItemsUrl.searchParams.get('bbox');
+          if (bboxStr) {
+            const bboxParts = bboxStr.split(',').map(Number);
+            if (bboxParts.length === 4 && bboxParts.every(n => !isNaN(n))) {
+              updatedParams.bbox = [bboxParts[0], bboxParts[1], bboxParts[2], bboxParts[3]] as [number, number, number, number];
+            }
+          }
+        } catch (e) {
+          // Ignore URL parsing errors
+        }
+      }
+      setItemSearchParams(updatedParams);
+    }
+  }, [collectionSearchParams, resolvedItemsHref]);
 
   const itemsSearch = useStacItemsSearch(resolvedItemsHref, itemPageSize, itemSearchParams);
 
