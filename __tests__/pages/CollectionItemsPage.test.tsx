@@ -139,7 +139,7 @@ describe('CollectionItemsPage', () => {
     });
 
     // Click Search button to start the search
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     await waitFor(() => {
@@ -176,7 +176,7 @@ describe('CollectionItemsPage', () => {
     await user.type(bboxInput, '-180,-90,180,90');
 
     // Submit search
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     // Wait for items to load (after Search button is clicked)
@@ -399,7 +399,7 @@ describe('CollectionItemsPage', () => {
     );
 
     // Click Search button to start the search
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     await waitFor(() => {
@@ -471,7 +471,7 @@ describe('CollectionItemsPage', () => {
     });
 
     // Click Search button to start the search
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     await waitFor(() => {
@@ -546,7 +546,7 @@ describe('CollectionItemsPage', () => {
     );
 
     // Click Search button to start the search
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     await waitFor(() => {
@@ -631,7 +631,7 @@ describe('CollectionItemsPage', () => {
     );
 
     // Click Search button
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     // Should show error message
@@ -683,7 +683,7 @@ describe('CollectionItemsPage', () => {
     );
 
     // Click Search button
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     // Wait for item to be rendered
@@ -762,7 +762,7 @@ describe('CollectionItemsPage', () => {
     );
 
     // Click Search button
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     // Should render items
@@ -806,7 +806,7 @@ describe('CollectionItemsPage', () => {
     );
 
     // Click Search button
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     // Wait for item to be rendered
@@ -839,7 +839,7 @@ describe('CollectionItemsPage', () => {
     );
 
     // Click Search without entering any filters
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     // Should show no items found
@@ -937,7 +937,7 @@ describe('CollectionItemsPage', () => {
     );
 
     // Click Search button
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     // Should show pagination with total count
@@ -999,7 +999,7 @@ describe('CollectionItemsPage', () => {
     await user.type(idsInput, 'item1,item2');
 
     // Submit search
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     // Should render items
@@ -1035,7 +1035,7 @@ describe('CollectionItemsPage', () => {
     );
 
     // Click Search button - should fail
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     // Wait for error and retry button
@@ -1087,7 +1087,7 @@ describe('CollectionItemsPage', () => {
     );
 
     // Click Search button
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     // Should render item
@@ -1131,7 +1131,7 @@ describe('CollectionItemsPage', () => {
     );
 
     // Click Search button
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     // Should render item
@@ -1271,7 +1271,7 @@ describe('CollectionItemsPage', () => {
     );
 
     // Click Search button
-    const submitButton = screen.getByRole('button', { name: 'Search' });
+    const submitButton = screen.getByRole('button', { name: 'Search Items' });
     await user.click(submitButton);
 
     // Should show pagination with item count but no next
