@@ -24,7 +24,8 @@ interface UseStacItemsSearchState {
 export function useStacItemsSearch(
   itemsHref: string | null,
   initialPageSize: number = 25,
-  searchParams: ItemSearchParams = {}
+  searchParams: ItemSearchParams = {},
+  shouldFetch: boolean = false
 ): UseStacItemsSearchState {
   const [pageCache, setPageCache] = useState<StacItemCollection[]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -67,8 +68,11 @@ export function useStacItemsSearch(
       return;
     }
 
-    fetchPage(itemsHref);
-  }, [itemsHref, pageSize, itemSearchParamsToString(searchParams)]);
+    // Only fetch if explicitly requested via shouldFetch flag
+    if (shouldFetch) {
+      fetchPage(itemsHref);
+    }
+  }, [itemsHref, pageSize, itemSearchParamsToString(searchParams), shouldFetch]);
 
   const goNext = async () => {
     if (!currentPage || loading) return;

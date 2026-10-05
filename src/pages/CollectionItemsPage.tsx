@@ -28,6 +28,7 @@ interface CollectionItemsPageProps {
 export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectionSearchParams }: CollectionItemsPageProps): JSX.Element {
   const itemPageSize = 25;
   const [itemCurrentPage, setItemCurrentPage] = useState(1);
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
 
   // Use rel=items link when available for item search/filter operations
   // The rel=items URL may already contain query parameters (bbox, datetime, etc.) which are preserved
@@ -102,17 +103,24 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
     }
   }, [collectionSearchParams, resolvedItemsHref]);
 
-  const itemsSearch = useStacItemsSearch(resolvedItemsHref, itemPageSize, itemSearchParams);
+  // Reset the applied filters flag when navigating to a different collection
+  useEffect(() => {
+    setHasAppliedFilters(false);
+  }, [resolvedItemsHref]);
+
+  const itemsSearch = useStacItemsSearch(resolvedItemsHref, itemPageSize, itemSearchParams, hasAppliedFilters);
 
   const handleItemSearch = (params: ItemSearchParams) => {
-    // Update search params, which triggers useStacItemsSearch hook to refetch
-    // with the parameters applied to the rel=items URL
+    // Update search params and mark that filters have been applied
+    // This triggers useStacItemsSearch hook to fetch with the parameters
     setItemCurrentPage(1);
     setItemSearchParams(params);
+    setHasAppliedFilters(true);
   };
 
   const handleItemSearchClear = () => {
     setItemSearchParams({});
+    setHasAppliedFilters(false);
   };
 
   const handleItemSearchParamsChange = (params: ItemSearchParams) => {
@@ -127,16 +135,14 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
 
       {itemsSearchLink ? (
         <>
-          {itemsSearch.supportsSearch && (
-            <ItemSearch
-              searchParams={itemSearchParams}
-              onSearchParamsChange={handleItemSearchParamsChange}
-              onSearch={handleItemSearch}
-              onClearSearch={handleItemSearchClear}
-              loading={itemsSearch.loading}
-              error={itemsSearch.error}
-            />
-          )}
+          <ItemSearch
+            searchParams={itemSearchParams}
+            onSearchParamsChange={handleItemSearchParamsChange}
+            onSearch={handleItemSearch}
+            onClearSearch={handleItemSearchClear}
+            loading={itemsSearch.loading}
+            error={itemsSearch.error}
+          />
 
           {itemsSearch.loading && (
             <div className="item-search-loading">

@@ -103,7 +103,7 @@ describe('useStacItemsSearch', () => {
       json: async () => mockItemCollection,
     } as Response);
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25, {}, true));
 
     expect(result.current.loading).toBe(true);
 
@@ -124,7 +124,7 @@ describe('useStacItemsSearch', () => {
       json: async () => mockItemCollection,
     } as Response);
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25, {}, true));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -139,7 +139,7 @@ describe('useStacItemsSearch', () => {
       json: async () => mockLastPage,
     } as Response);
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25, {}, true));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -159,7 +159,7 @@ describe('useStacItemsSearch', () => {
         json: async () => mockSecondPage,
       } as Response);
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 2));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 2, {}, true));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -190,7 +190,7 @@ describe('useStacItemsSearch', () => {
         json: async () => mockSecondPage,
       } as Response);
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 2));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 2, {}, true));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -220,7 +220,7 @@ describe('useStacItemsSearch', () => {
       json: async () => mockItemCollection,
     } as Response);
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25, {}, true));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -244,7 +244,7 @@ describe('useStacItemsSearch', () => {
       json: async () => mockItemCollection,
     } as Response);
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25, {}, true));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -270,7 +270,7 @@ describe('useStacItemsSearch', () => {
     const error = new Error('Network error');
     vi.mocked(fetch).mockRejectedValue(error);
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25, {}, true));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -289,7 +289,7 @@ describe('useStacItemsSearch', () => {
         json: async () => mockItemCollection,
       } as Response);
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25, {}, true));
 
     await waitFor(() => {
       expect(result.current.error).not.toBeNull();
@@ -313,8 +313,8 @@ describe('useStacItemsSearch', () => {
     } as Response);
 
     const { result, rerender } = renderHook(
-      ({ href }) => useStacItemsSearch(href),
-      { initialProps: { href: 'https://example.com/items1' } }
+      ({ href, shouldFetch }) => useStacItemsSearch(href, 25, {}, shouldFetch),
+      { initialProps: { href: 'https://example.com/items1', shouldFetch: true } }
     );
 
     await waitFor(() => {
@@ -323,7 +323,7 @@ describe('useStacItemsSearch', () => {
 
     expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
 
-    rerender({ href: 'https://example.com/items2' });
+    rerender({ href: 'https://example.com/items2', shouldFetch: true });
 
     await waitFor(() => {
       expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
@@ -354,7 +354,7 @@ describe('useStacItemsSearch', () => {
         statusText: 'Server Error',
       } as Response);
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25, {}, true));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -396,7 +396,7 @@ describe('useStacItemsSearch', () => {
       json: async () => mockLastPage,
     } as Response);
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25, {}, true));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -416,7 +416,7 @@ describe('useStacItemsSearch', () => {
   it('should handle non-Error exceptions in fetchPage', async () => {
     vi.mocked(fetch).mockRejectedValueOnce('String error');
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25, {}, true));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -434,7 +434,7 @@ describe('useStacItemsSearch', () => {
       } as Response)
       .mockRejectedValueOnce('String error in goNext');
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25, {}, true));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -475,7 +475,7 @@ describe('useStacItemsSearch', () => {
       json: async () => mockItemCollection,
     } as Response);
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items'));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25, {}, true));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -506,7 +506,7 @@ describe('useStacItemsSearch', () => {
         json: async () => mockLastPage,
       } as Response);
 
-    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 2));
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 2, {}, true));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -552,7 +552,7 @@ describe('useStacItemsSearch', () => {
       useStacItemsSearch('https://example.com/items', 25, {
         bbox: [-180, -90, 180, 90],
         datetime: '2020-01-01/2023-12-31',
-      })
+      }, true)
     );
 
     await waitFor(() => {
@@ -574,7 +574,7 @@ describe('useStacItemsSearch', () => {
     const { result } = renderHook(() =>
       useStacItemsSearch('https://example.com/items', 25, {
         ids: ['item-1', 'item-2'],
-      })
+      }, true)
     );
 
     await waitFor(() => {
@@ -592,8 +592,8 @@ describe('useStacItemsSearch', () => {
     } as Response);
 
     const { result, rerender } = renderHook(
-      ({ searchParams }) => useStacItemsSearch('https://example.com/items', 25, searchParams),
-      { initialProps: { searchParams: {} } }
+      ({ searchParams, shouldFetch }) => useStacItemsSearch('https://example.com/items', 25, searchParams, shouldFetch),
+      { initialProps: { searchParams: {}, shouldFetch: true } }
     );
 
     await waitFor(() => {
@@ -615,7 +615,7 @@ describe('useStacItemsSearch', () => {
     expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
 
     // Change search params, should reset to page 1
-    rerender({ searchParams: { bbox: [-180, -90, 180, 90] } });
+    rerender({ searchParams: { bbox: [-180, -90, 180, 90] }, shouldFetch: true });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -634,7 +634,7 @@ describe('useStacItemsSearch', () => {
     const { result } = renderHook(() =>
       useStacItemsSearch('https://example.com/items', 10, {
         limit: 50,
-      })
+      }, true)
     );
 
     await waitFor(() => {
@@ -644,5 +644,18 @@ describe('useStacItemsSearch', () => {
     const fetchCall = vi.mocked(fetch).mock.calls[0][0] as string;
     // Both search params limit and page size limit should be in the URL
     expect(fetchCall).toContain('limit=10');
+  });
+
+  it('should not fetch when shouldFetch is false', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockItemCollection,
+    } as Response);
+
+    const { result } = renderHook(() => useStacItemsSearch('https://example.com/items', 25, {}, false));
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.items).toEqual([]);
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
   });
 });

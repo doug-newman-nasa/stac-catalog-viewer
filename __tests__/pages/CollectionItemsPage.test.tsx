@@ -168,7 +168,7 @@ describe('CollectionItemsPage', () => {
     const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
     await user.click(submitButton);
 
-    // Wait for clear button to appear
+    // Wait for items to load (after Apply Filters is clicked)
     await waitFor(() => {
       const clearButton = screen.getByRole('button', { name: /Clear Filters/ });
       expect(clearButton).toBeInTheDocument();
@@ -387,6 +387,10 @@ describe('CollectionItemsPage', () => {
       />
     );
 
+    // Click Apply Filters to start the search
+    const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
+    await user.click(submitButton);
+
     await waitFor(() => {
       const pageTexts = screen.getAllByText(/Page 1/);
       expect(pageTexts.length).toBeGreaterThan(0);
@@ -406,6 +410,7 @@ describe('CollectionItemsPage', () => {
   });
 
   it('should render items with browse assets', async () => {
+    const user = userEvent.setup();
     const itemCollectionWithAssets = {
       type: 'FeatureCollection',
       features: [
@@ -447,6 +452,16 @@ describe('CollectionItemsPage', () => {
         itemsSearchLink={mockItemsLink}
       />
     );
+
+    // Wait for ItemSearch component to be available
+    await waitFor(() => {
+      const toggle = screen.getByRole('button', { name: /Search & Filter Items/ });
+      expect(toggle).toBeInTheDocument();
+    });
+
+    // Click Apply Filters to start the search
+    const submitButton = screen.getByRole('button', { name: /Apply Filters/ });
+    await user.click(submitButton);
 
     await waitFor(() => {
       expect(screen.getByText('item-with-assets')).toBeInTheDocument();
