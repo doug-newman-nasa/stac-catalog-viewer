@@ -40,9 +40,10 @@ export function useStacItemsSearch(
   const fetchPage = async (href: string) => {
     setLoading(true);
     setError(null);
+    // Apply search parameters (bbox, datetime, ids) to the items URL
     const hrefWithSearchParams = applyItemSearchParams(href, searchParams);
     const url = withLimit(hrefWithSearchParams, pageSize);
-    logger.logInfo('Fetching items page', { url, pageSize, searchParams });
+    logger.logInfo('Fetching items page with search parameters', { url, pageSize, searchParams });
     try {
       const collection = await fetchItemCollection(url);
       setPageCache([collection]);

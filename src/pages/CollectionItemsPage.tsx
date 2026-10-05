@@ -32,11 +32,14 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
     collectionSearchParams ? collectionSearchParamsToItemSearchParams(collectionSearchParams) : {}
   );
 
+  // Use rel=items link when available for item search/filter operations
   const resolvedItemsHref = itemsSearchLink && url ? resolveHref(url, itemsSearchLink.href) : null;
   const itemsSearch = useStacItemsSearch(resolvedItemsHref, itemPageSize, itemSearchParams);
 
-
   const handleItemSearch = (params: ItemSearchParams) => {
+    // Update search params, which triggers useStacItemsSearch hook to refetch
+    // with the parameters applied to the rel=items URL
+    setItemCurrentPage(1);
     setItemSearchParams(params);
   };
 
