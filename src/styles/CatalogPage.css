@@ -680,6 +680,21 @@ a:focus-visible {
   font-family: 'Courier New', monospace;
   font-size: 11px;
   border: 1px solid #e0e0e0;
+  text-decoration: none;
+  word-break: break-all;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rel-items-link-href:hover {
+  background: #f0f4ff;
+  border-color: #667eea;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+}
+
+.rel-items-link-href:focus-visible {
+  outline: 3px solid #667eea;
+  outline-offset: 2px;
 }
 
 .rel-items-link-title {

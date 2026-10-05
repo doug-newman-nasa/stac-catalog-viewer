@@ -10,7 +10,7 @@ import { DatetimeDisplay } from '../components/DatetimeDisplay';
 import { StorageDisplay } from '../components/StorageDisplay';
 import { LinksDisplay } from '../components/LinksDisplay';
 import { resolveHref, getItemBrowseLinks, getItemBrowseAssets, getItemOtherLinks } from '../lib/stac';
-import { collectionSearchParamsToItemSearchParams } from '../lib/itemSearch';
+import { collectionSearchParamsToItemSearchParams, extractSearchParamsFromUrl } from '../lib/itemSearch';
 import { extractItemExtent } from '../lib/itemExtent';
 import { getTotalPages, getPaginatedData } from '../lib/pagination';
 import type { StacLink } from '../types/stac';
@@ -28,12 +28,26 @@ interface CollectionItemsPageProps {
 export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectionSearchParams }: CollectionItemsPageProps): JSX.Element {
   const itemPageSize = 25;
   const [itemCurrentPage, setItemCurrentPage] = useState(1);
-  const [itemSearchParams, setItemSearchParams] = useState<ItemSearchParams>(() =>
-    collectionSearchParams ? collectionSearchParamsToItemSearchParams(collectionSearchParams) : {}
-  );
 
   // Use rel=items link when available for item search/filter operations
+  // Resolve the items URL and extract any existing query parameters
   const resolvedItemsHref = itemsSearchLink && url ? resolveHref(url, itemsSearchLink.href) : null;
+
+  // Initialize search params from collection search params or from rel=items URL parameters
+  const [itemSearchParams, setItemSearchParams] = useState<ItemSearchParams>(() => {
+    if (collectionSearchParams) {
+      return collectionSearchParamsToItemSearchParams(collectionSearchParams);
+    }
+    // If rel=items URL has query parameters (bbox, datetime, ids), extract and use them
+    if (resolvedItemsHref) {
+      const urlParams = extractSearchParamsFromUrl(resolvedItemsHref);
+      if (Object.keys(urlParams).length > 0) {
+        return urlParams;
+      }
+    }
+    return {};
+  });
+
   const itemsSearch = useStacItemsSearch(resolvedItemsHref, itemPageSize, itemSearchParams);
 
   const handleItemSearch = (params: ItemSearchParams) => {

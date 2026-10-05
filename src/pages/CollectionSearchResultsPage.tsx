@@ -134,12 +134,23 @@ export function CollectionSearchResultsPage({
                         <div className="rel-items-links">
                           <div className="rel-items-links-label">rel=items links:</div>
                           <ul className="rel-items-links-list">
-                            {itemsLinks.map((link, index) => (
-                              <li key={`${collection.id}-items-${index}`} className="rel-items-link">
-                                <code className="rel-items-link-href">{link.href}</code>
-                                {link.title && <span className="rel-items-link-title">{link.title}</span>}
-                              </li>
-                            ))}
+                            {itemsLinks.map((link, index) => {
+                              const itemsUrl = resolveHref(url, link.href);
+                              return (
+                                <li key={`${collection.id}-items-${index}`} className="rel-items-link">
+                                  <a
+                                    href={itemsUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rel-items-link-href"
+                                    title={`Open items endpoint: ${link.title || 'rel=items'}`}
+                                  >
+                                    {link.href}
+                                  </a>
+                                  {link.title && <span className="rel-items-link-title">{link.title}</span>}
+                                </li>
+                              );
+                            })}
                           </ul>
                         </div>
                       )}
