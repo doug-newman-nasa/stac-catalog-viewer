@@ -34,11 +34,29 @@ export function applyItemSearchParams(href: string, params: ItemSearchParams): s
 
   try {
     const url = new URL(href);
-    const searchParams = buildItemSearchParams(params);
 
-    // Apply the search params to the URL
-    for (const [key, value] of searchParams) {
-      url.searchParams.set(key, value);
+    // Only set parameters if they are explicitly provided by the user
+    // If a parameter is provided in params, it overrides any existing value
+    // If a parameter is NOT provided in params, preserve any existing value in the URL
+
+    // Handle bbox - only override if user provided new bbox
+    if (params.bbox) {
+      url.searchParams.set('bbox', params.bbox.join(','));
+    }
+
+    // Handle datetime - only override if user provided new datetime
+    if (params.datetime) {
+      url.searchParams.set('datetime', params.datetime);
+    }
+
+    // Handle ids - only override if user provided new ids
+    if (params.ids && params.ids.length > 0) {
+      url.searchParams.set('ids', params.ids.join(','));
+    }
+
+    // Handle limit - only override if user provided new limit
+    if (params.limit) {
+      url.searchParams.set('limit', String(params.limit));
     }
 
     return url.toString();

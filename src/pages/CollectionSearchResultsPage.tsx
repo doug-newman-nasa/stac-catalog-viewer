@@ -5,7 +5,7 @@ import { CollectionSearch } from '../components/CollectionSearch';
 import { resolveHref, getSearchLink } from '../lib/stac';
 import { getPaginatedData, getTotalPages } from '../lib/pagination';
 import type { CollectionSearchParams } from '../lib/collectionSearch';
-import type { StacCatalog } from '../types/stac';
+import type { StacCatalog, StacLink } from '../types/stac';
 import '../styles/CatalogPage.css';
 
 interface CollectionSearchResultsPageProps {

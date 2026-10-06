@@ -641,6 +641,69 @@ a:focus-visible {
   box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
 }
 
+.collection-result-card {
+  margin-bottom: 16px;
+}
+
+.rel-items-links {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-left: 3px solid #667eea;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.rel-items-links-label {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.rel-items-links-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.rel-items-link {
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+
+.rel-items-link-href {
+  display: block;
+  background: white;
+  padding: 6px;
+  border-radius: 3px;
+  color: #667eea;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  border: 1px solid #e0e0e0;
+  text-decoration: none;
+  word-break: break-all;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rel-items-link-href:hover {
+  background: #f0f4ff;
+  border-color: #667eea;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+}
+
+.rel-items-link-href:focus-visible {
+  outline: 3px solid #667eea;
+  outline-offset: 2px;
+}
+
+.rel-items-link-title {
+  display: block;
+  margin-top: 4px;
+  color: #666;
+  font-style: italic;
+}
+
 @media (max-width: 768px) {
   .collection-list {
     grid-template-columns: 1fr;

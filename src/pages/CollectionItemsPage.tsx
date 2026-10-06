@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { JSX } from 'react';
 import { useStacItemsSearch } from '../hooks/useStacItemsSearch';
 import { ItemSearch } from '../components/ItemSearch';
@@ -28,20 +28,99 @@ interface CollectionItemsPageProps {
 export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectionSearchParams }: CollectionItemsPageProps): JSX.Element {
   const itemPageSize = 25;
   const [itemCurrentPage, setItemCurrentPage] = useState(1);
-  const [itemSearchParams, setItemSearchParams] = useState<ItemSearchParams>(() =>
-    collectionSearchParams ? collectionSearchParamsToItemSearchParams(collectionSearchParams) : {}
-  );
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
 
+  // Use rel=items link when available for item search/filter operations
+  // The rel=items URL may already contain query parameters (bbox, datetime, etc.) which are preserved
   const resolvedItemsHref = itemsSearchLink && url ? resolveHref(url, itemsSearchLink.href) : null;
-  const itemsSearch = useStacItemsSearch(resolvedItemsHref, itemPageSize, itemSearchParams);
 
+  // Initialize search params from collection search params AND any parameters already in the rel=items URL
+  const [itemSearchParams, setItemSearchParams] = useState<ItemSearchParams>(() => {
+    // Start with search params from collection search
+    const params = collectionSearchParams ? collectionSearchParamsToItemSearchParams(collectionSearchParams) : {};
+
+    // Extract any parameters that are already in the rel=items URL and preserve them if not in search params
+    if (resolvedItemsHref) {
+      try {
+        const relItemsUrl = new URL(resolvedItemsHref);
+
+        // Extract bbox if not already in search params
+        if (!params.bbox) {
+          const bboxStr = relItemsUrl.searchParams.get('bbox');
+          if (bboxStr) {
+            const bboxParts = bboxStr.split(',').map(Number);
+            if (bboxParts.length === 4 && bboxParts.every(n => !isNaN(n))) {
+              params.bbox = [bboxParts[0], bboxParts[1], bboxParts[2], bboxParts[3]] as [number, number, number, number];
+            }
+          }
+        }
+
+        // Extract datetime if not already in search params
+        if (!params.datetime) {
+          const datetimeStr = relItemsUrl.searchParams.get('datetime');
+          if (datetimeStr) {
+            params.datetime = datetimeStr;
+          }
+        }
+
+        // Extract ids if not already in search params
+        if (!params.ids || params.ids.length === 0) {
+          const idsStr = relItemsUrl.searchParams.get('ids');
+          if (idsStr) {
+            params.ids = idsStr.split(',');
+          }
+        }
+      } catch (e) {
+        // If URL parsing fails, ignore and continue with existing params
+      }
+    }
+
+    return params;
+  });
+
+  // Sync itemSearchParams with collectionSearchParams when it changes
+  // This ensures that if collection search params are updated after navigation,
+  // the item search will use the updated params (including bbox from search)
+  useEffect(() => {
+    if (collectionSearchParams) {
+      const updatedParams = collectionSearchParamsToItemSearchParams(collectionSearchParams);
+      // Merge with any parameters already in the rel=items URL
+      if (resolvedItemsHref && !updatedParams.bbox) {
+        try {
+          const relItemsUrl = new URL(resolvedItemsHref);
+          const bboxStr = relItemsUrl.searchParams.get('bbox');
+          if (bboxStr) {
+            const bboxParts = bboxStr.split(',').map(Number);
+            if (bboxParts.length === 4 && bboxParts.every(n => !isNaN(n))) {
+              updatedParams.bbox = [bboxParts[0], bboxParts[1], bboxParts[2], bboxParts[3]] as [number, number, number, number];
+            }
+          }
+        } catch (e) {
+          // Ignore URL parsing errors
+        }
+      }
+      setItemSearchParams(updatedParams);
+    }
+  }, [collectionSearchParams, resolvedItemsHref]);
+
+  // Reset the applied filters flag when navigating to a different collection
+  useEffect(() => {
+    setHasAppliedFilters(false);
+  }, [resolvedItemsHref]);
+
+  const itemsSearch = useStacItemsSearch(resolvedItemsHref, itemPageSize, itemSearchParams, hasAppliedFilters);
 
   const handleItemSearch = (params: ItemSearchParams) => {
+    // Update search params and mark that filters have been applied
+    // This triggers useStacItemsSearch hook to fetch with the parameters
+    setItemCurrentPage(1);
     setItemSearchParams(params);
+    setHasAppliedFilters(true);
   };
 
   const handleItemSearchClear = () => {
     setItemSearchParams({});
+    setHasAppliedFilters(false);
   };
 
   const handleItemSearchParamsChange = (params: ItemSearchParams) => {
@@ -56,16 +135,14 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
 
       {itemsSearchLink ? (
         <>
-          {itemsSearch.supportsSearch && (
-            <ItemSearch
-              searchParams={itemSearchParams}
-              onSearchParamsChange={handleItemSearchParamsChange}
-              onSearch={handleItemSearch}
-              onClearSearch={handleItemSearchClear}
-              loading={itemsSearch.loading}
-              error={itemsSearch.error}
-            />
-          )}
+          <ItemSearch
+            searchParams={itemSearchParams}
+            onSearchParamsChange={handleItemSearchParamsChange}
+            onSearch={handleItemSearch}
+            onClearSearch={handleItemSearchClear}
+            loading={itemsSearch.loading}
+            error={itemsSearch.error}
+          />
 
           {itemsSearch.loading && (
             <div className="item-search-loading">
@@ -82,13 +159,13 @@ export function CollectionItemsPage({ url, itemLinks, itemsSearchLink, collectio
             </div>
           )}
 
-          {!itemsSearch.loading && !itemsSearch.error && itemsSearch.items.length === 0 && (!itemsSearch.numberMatched || itemsSearch.numberMatched === 0) && (
+          {hasAppliedFilters && !itemsSearch.loading && !itemsSearch.error && itemsSearch.items.length === 0 && (!itemsSearch.numberMatched || itemsSearch.numberMatched === 0) && (
             <div className="item-search-no-results">
               <p className="no-results-message">No items found</p>
             </div>
           )}
 
-          {!itemsSearch.loading && !itemsSearch.error && (itemsSearch.items.length > 0 || (itemsSearch.numberMatched && itemsSearch.numberMatched > 0)) && (
+          {hasAppliedFilters && !itemsSearch.loading && !itemsSearch.error && (itemsSearch.items.length > 0 || (itemsSearch.numberMatched && itemsSearch.numberMatched > 0)) && (
             <>
               <div className="pagination pagination-top">
                 <span className="page-info">

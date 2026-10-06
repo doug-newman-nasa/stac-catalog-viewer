@@ -24,7 +24,8 @@ interface UseStacItemsSearchState {
 export function useStacItemsSearch(
   itemsHref: string | null,
   initialPageSize: number = 25,
-  searchParams: ItemSearchParams = {}
+  searchParams: ItemSearchParams = {},
+  shouldFetch: boolean = false
 ): UseStacItemsSearchState {
   const [pageCache, setPageCache] = useState<StacItemCollection[]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -40,6 +41,8 @@ export function useStacItemsSearch(
   const fetchPage = async (href: string) => {
     setLoading(true);
     setError(null);
+    // Apply user-entered search parameters (bbox, datetime, ids) on top of the items URL
+    // The href may already contain query parameters from rel=items link - these are preserved
     const hrefWithSearchParams = applyItemSearchParams(href, searchParams);
     const url = withLimit(hrefWithSearchParams, pageSize);
     logger.logInfo('Fetching items page', { url, pageSize, searchParams });
@@ -65,8 +68,11 @@ export function useStacItemsSearch(
       return;
     }
 
-    fetchPage(itemsHref);
-  }, [itemsHref, pageSize, itemSearchParamsToString(searchParams)]);
+    // Only fetch if explicitly requested via shouldFetch flag
+    if (shouldFetch) {
+      fetchPage(itemsHref);
+    }
+  }, [itemsHref, pageSize, itemSearchParamsToString(searchParams), shouldFetch]);
 
   const goNext = async () => {
     if (!currentPage || loading) return;
