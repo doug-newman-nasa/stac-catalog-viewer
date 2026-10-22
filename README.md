@@ -154,6 +154,19 @@ Coverage reports are generated in the `coverage/` directory. Open `coverage/inde
 ### Interactive Test UI
 
 Launch the Vitest interactive dashboard:
+
+#### First Time Running
+
+Need to capture the full URL with `?token=...` and use that full URL on the first time. Otherwise, you will see this authentication error in the browser `Vitest UI requires authentication. Open the URL with the token printed in the terminal, e.g. http://localhost:51204/__vitest__/?token=....`
+
+```bash
+npm run test:ui 2>&1 | tee vitest.log
+```
+
+Open `vitest.log` file, copy the URL with `?token=...`, and paste the URL on the browser.
+
+#### Not First Time Running
+
 ```bash
 npm run test:ui
 ```
@@ -211,7 +224,7 @@ stac-catalog-viewer/
 | `npm run preview` | Preview production build locally |
 | `npm test` | Run tests in watch mode |
 | `npm test -- --run` | Run tests once and exit |
-| `npm test:ui` | Launch interactive test dashboard |
+| `npm run test:ui` | Launch interactive test dashboard |
 | `npm run test:coverage` | Generate coverage report |
 | `npm run lint` | Run Oxlint code quality checks |
 
