@@ -80,7 +80,7 @@ The application displays comprehensive collection information:
 
 ## Prerequisites
 
-- Node.js 18+ and npm (comes with Node.js)
+- Node.js 24+ and npm (comes with Node.js)
 
 ## Installation
 
@@ -155,7 +155,7 @@ Coverage reports are generated in the `coverage/` directory. Open `coverage/inde
 
 Launch the Vitest interactive dashboard:
 ```bash
-npm test:ui
+npm run test:ui
 ```
 
 ## Project Structure
