@@ -3,9 +3,9 @@ import type { JSX } from 'react';
 import { useCollectionSearch } from '../hooks/useCollectionSearch';
 import { CollectionSearch } from '../components/CollectionSearch';
 import { resolveHref, getSearchLink } from '../lib/stac';
-import { getPaginatedData, getTotalPages } from '../lib/pagination';
+import { DEFAULT_PAGE_SIZE } from '../lib/pagination';
 import type { CollectionSearchParams } from '../lib/collectionSearch';
-import type { StacCatalog, StacLink } from '../types/stac';
+import type { StacCatalog } from '../types/stac';
 import '../styles/CatalogPage.css';
 
 interface CollectionSearchResultsPageProps {
@@ -15,8 +15,6 @@ interface CollectionSearchResultsPageProps {
   onResultsChange: (hasResults: boolean) => void;
 }
 
-const RESULTS_PER_PAGE = 25;
-
 export function CollectionSearchResultsPage({
   url,
   catalogData,
@@ -24,7 +22,6 @@ export function CollectionSearchResultsPage({
   onResultsChange,
 }: CollectionSearchResultsPageProps): JSX.Element {
   const [collectionSearchParams, setCollectionSearchParams] = useState<CollectionSearchParams>({});
-  const [collectionSearchPage, setCollectionSearchPage] = useState(1);
 
   const searchState = useCollectionSearch();
   const hasSearchSupport = !!getSearchLink(catalogData);
@@ -40,19 +37,39 @@ export function CollectionSearchResultsPage({
   };
 
   const handleCollectionSearch = async (params: CollectionSearchParams) => {
-    setCollectionSearchPage(1);
     await searchState.search(url, params);
   };
 
   const handleCollectionSearchClear = () => {
-    setCollectionSearchParams({ limit: 25 });
+    setCollectionSearchParams({ limit: DEFAULT_PAGE_SIZE });
     searchState.clearResults();
-    setCollectionSearchPage(1);
   };
 
   if (!hasSearchSupport) {
     return <></>;
   }
+
+  const renderPagination = (className: string) => (
+    <div className={className}>
+      <span className="page-info">Page {searchState.page}</span>
+      <div className="pagination-controls">
+        <button
+          onClick={() => searchState.goPrevious()}
+          disabled={!searchState.hasPrevious || searchState.loading}
+          className="pagination-button"
+        >
+          ← Previous
+        </button>
+        <button
+          onClick={() => searchState.goNext()}
+          disabled={!searchState.hasNext || searchState.loading}
+          className="pagination-button"
+        >
+          Next →
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -71,48 +88,18 @@ export function CollectionSearchResultsPage({
             <h3 className="section-title">Search Results</h3>
           </div>
 
-          {searchState.loading && (
+          {searchState.loading && searchState.results.length === 0 && (
             <div className="search-loading">
               <span className="spinner">⏳</span> Searching collections...
             </div>
           )}
 
-          {!searchState.loading && searchState.results.length > 0 && (
+          {searchState.results.length > 0 && (
             <>
-              {getTotalPages(searchState.results.length, RESULTS_PER_PAGE) > 1 && (
-                <div className="pagination pagination-top">
-                  <span className="page-info">
-                    Page {collectionSearchPage} of {getTotalPages(searchState.results.length, RESULTS_PER_PAGE)}
-                  </span>
-                  <div className="pagination-controls">
-                    <button
-                      onClick={() => setCollectionSearchPage(Math.max(1, collectionSearchPage - 1))}
-                      disabled={collectionSearchPage === 1}
-                      className="pagination-button"
-                    >
-                      ← Previous
-                    </button>
-                    <button
-                      onClick={() =>
-                        setCollectionSearchPage(
-                          Math.min(getTotalPages(searchState.results.length, RESULTS_PER_PAGE), collectionSearchPage + 1)
-                        )
-                      }
-                      disabled={collectionSearchPage === getTotalPages(searchState.results.length, RESULTS_PER_PAGE)}
-                      className="pagination-button"
-                    >
-                      Next →
-                    </button>
-                  </div>
-                </div>
-              )}
+              {(searchState.hasPrevious || searchState.hasNext) && renderPagination('pagination pagination-top')}
 
               <div className="child-list">
-                {getPaginatedData(
-                  searchState.results,
-                  collectionSearchPage,
-                  RESULTS_PER_PAGE
-                ).map((collection) => (
+                {searchState.results.map((collection) => (
                   <div
                     key={collection.id}
                     onClick={() => handleCollectionSelect(collection)}
@@ -127,33 +114,7 @@ export function CollectionSearchResultsPage({
                 ))}
               </div>
 
-              {getTotalPages(searchState.results.length, RESULTS_PER_PAGE) > 1 && (
-                <div className="pagination">
-                  <span className="page-info">
-                    Page {collectionSearchPage} of {getTotalPages(searchState.results.length, RESULTS_PER_PAGE)}
-                  </span>
-                  <div className="pagination-controls">
-                    <button
-                      onClick={() => setCollectionSearchPage(Math.max(1, collectionSearchPage - 1))}
-                      disabled={collectionSearchPage === 1}
-                      className="pagination-button"
-                    >
-                      ← Previous
-                    </button>
-                    <button
-                      onClick={() =>
-                        setCollectionSearchPage(
-                          Math.min(getTotalPages(searchState.results.length, RESULTS_PER_PAGE), collectionSearchPage + 1)
-                        )
-                      }
-                      disabled={collectionSearchPage === getTotalPages(searchState.results.length, RESULTS_PER_PAGE)}
-                      className="pagination-button"
-                    >
-                      Next →
-                    </button>
-                  </div>
-                </div>
-              )}
+              {(searchState.hasPrevious || searchState.hasNext) && renderPagination('pagination')}
             </>
           )}
         </div>

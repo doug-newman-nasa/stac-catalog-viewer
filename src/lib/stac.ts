@@ -169,6 +169,14 @@ export function getSearchLink(catalog: StacCatalog | undefined): StacLink | unde
   return catalog.links.find((link) => link.rel === 'search' || link.rel === 'data');
 }
 
+/**
+ * Resolve the URL of the next page of a paginated response, if there is one
+ */
+export function getNextPageUrl(links: StacLink[] | undefined, baseUrl: string): string | undefined {
+  const nextLink = links?.find((link) => link.rel === 'next');
+  return nextLink ? resolveHref(baseUrl, nextLink.href) : undefined;
+}
+
 export function getParentLink(catalog: StacCatalog): StacLink | undefined {
   return catalog.links.find((link) => link.rel === 'parent');
 }

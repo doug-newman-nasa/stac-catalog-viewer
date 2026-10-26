@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   buildCollectionSearchParams,
   searchCollections,
+  fetchCollectionsPage,
   filterCollectionsByBbox,
   filterCollectionsByDatetime,
   filterCollectionsByText,
@@ -239,6 +240,62 @@ describe('Collection Search', () => {
       await expect(
         searchCollections('https://example.com/stac', { limit: 25 })
       ).rejects.toThrow('Invalid collection search response');
+    });
+
+    it('should return the next link without requesting the following page', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          collections: [mockCollection],
+          numberMatched: 3,
+          links: [{ rel: 'next', href: 'https://example.com/stac/collections?limit=25&cursor=page2' }],
+        }),
+      });
+
+      const result = await searchCollections('https://example.com/stac', { limit: 25 });
+
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(result.nextUrl).toBe('https://example.com/stac/collections?limit=25&cursor=page2');
+      expect(result.collections).toHaveLength(1);
+      expect(result.numberMatched).toBe(3);
+    });
+
+    it('should resolve a relative next link against the page it came from', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          collections: [],
+          links: [{ rel: 'next', href: '/stac/collections?cursor=page2' }],
+        }),
+      });
+
+      const result = await searchCollections('https://example.com/stac', {});
+
+      expect(result.nextUrl).toBe('https://example.com/stac/collections?cursor=page2');
+    });
+
+    it('should default to the UI page size of 25 when no limit is given', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ collections: [] }),
+      });
+
+      await searchCollections('https://example.com/stac', {});
+
+      expect(vi.mocked(global.fetch).mock.calls[0][0]).toBe('https://example.com/stac/collections?limit=25');
+    });
+
+    it('should fetch exactly the URL given to fetchCollectionsPage', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ collections: [mockCollection2] }),
+      });
+
+      const result = await fetchCollectionsPage('https://example.com/stac/collections?limit=25&cursor=page2');
+
+      expect(vi.mocked(global.fetch).mock.calls[0][0]).toBe('https://example.com/stac/collections?limit=25&cursor=page2');
+      expect(result.collections[0].id).toBe('landsat-8');
+      expect(result.nextUrl).toBeUndefined();
     });
   });
 
