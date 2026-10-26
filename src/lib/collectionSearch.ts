@@ -1,5 +1,7 @@
 import type { StacCatalog } from '../types/stac';
 import { logger } from './logger';
+import { getNextPageUrl } from './stac';
+import { DEFAULT_PAGE_SIZE } from './pagination';
 
 export interface CollectionSearchParams {
   bbox?: [number, number, number, number]; // [west, south, east, north]
@@ -16,6 +18,7 @@ export interface CollectionSearchResult {
   collections: StacCatalog[];
   numberMatched?: number;
   numberReturned?: number;
+  nextUrl?: string;
 }
 
 /**
@@ -71,16 +74,18 @@ export function buildCollectionSearchParams(params: CollectionSearchParams): URL
 }
 
 /**
- * Fetch collections using the collection search extension
+ * Build the URL for the first page of a collection search, using the UI page size unless a limit is given
  */
-export async function searchCollections(
-  baseUrl: string,
-  params: CollectionSearchParams
-): Promise<CollectionSearchResult> {
-  const queryParams = buildCollectionSearchParams(params);
-  const url = `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}collections?${queryParams.toString()}`;
+export function buildCollectionSearchUrl(baseUrl: string, params: CollectionSearchParams): string {
+  const queryParams = buildCollectionSearchParams({ ...params, limit: params.limit ?? DEFAULT_PAGE_SIZE });
+  return `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}collections?${queryParams.toString()}`;
+}
 
-  logger.logRequest('GET', url, { params });
+/**
+ * Fetch a single page of collection search results from a URL, such as one returned by buildCollectionSearchUrl or a "next" link
+ */
+export async function fetchCollectionsPage(url: string): Promise<CollectionSearchResult> {
+  logger.logRequest('GET', url);
 
   const startTime = performance.now();
   try {
@@ -110,6 +115,7 @@ export async function searchCollections(
       collections: collections as StacCatalog[],
       numberMatched: data.numberMatched,
       numberReturned: data.numberReturned || collections.length,
+      nextUrl: getNextPageUrl(data.links, url),
     };
   } catch (error) {
     const duration = performance.now() - startTime;
@@ -118,6 +124,13 @@ export async function searchCollections(
     }
     throw error;
   }
+}
+
+/**
+ * Fetch the first page of collection search results
+ */
+export function searchCollections(baseUrl: string, params: CollectionSearchParams): Promise<CollectionSearchResult> {
+  return fetchCollectionsPage(buildCollectionSearchUrl(baseUrl, params));
 }
 
 /**

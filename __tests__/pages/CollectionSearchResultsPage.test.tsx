@@ -56,6 +56,7 @@ describe('CollectionSearchResultsPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(collectionSearch.buildCollectionSearchUrl).mockReturnValue('https://example.com/collections?limit=25');
   });
 
   it('should render the CollectionSearch component', () => {
@@ -74,7 +75,7 @@ describe('CollectionSearchResultsPage', () => {
   it('should call search on form submit', async () => {
     const user = userEvent.setup();
     const mockSearch = vi.fn().mockResolvedValue(undefined);
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
+    vi.mocked(collectionSearch.fetchCollectionsPage).mockResolvedValue({
       collections: mockCollections,
       numberMatched: 2,
       numberReturned: 2,
@@ -88,13 +89,13 @@ describe('CollectionSearchResultsPage', () => {
     await user.click(searchButton);
 
     await waitFor(() => {
-      expect(vi.mocked(collectionSearch.searchCollections)).toHaveBeenCalled();
+      expect(vi.mocked(collectionSearch.fetchCollectionsPage)).toHaveBeenCalled();
     });
   });
 
   it('should display search results when available', async () => {
     const user = userEvent.setup();
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
+    vi.mocked(collectionSearch.fetchCollectionsPage).mockResolvedValue({
       collections: mockCollections,
       numberMatched: 2,
       numberReturned: 2,
@@ -119,7 +120,7 @@ describe('CollectionSearchResultsPage', () => {
       resolveSearch = resolve;
     });
 
-    vi.mocked(collectionSearch.searchCollections).mockReturnValue(searchPromise as any);
+    vi.mocked(collectionSearch.fetchCollectionsPage).mockReturnValue(searchPromise as any);
 
     renderComponent();
     const searchInput = screen.getByPlaceholderText(/Search by title/i);
@@ -139,7 +140,7 @@ describe('CollectionSearchResultsPage', () => {
   it('should display search error when search fails', async () => {
     const user = userEvent.setup();
     const error = new Error('Search failed');
-    vi.mocked(collectionSearch.searchCollections).mockRejectedValue(error);
+    vi.mocked(collectionSearch.fetchCollectionsPage).mockRejectedValue(error);
 
     renderComponent();
     const searchInput = screen.getByPlaceholderText(/Search by title/i);
@@ -155,7 +156,7 @@ describe('CollectionSearchResultsPage', () => {
 
   it('should clear search results when clear button is clicked', async () => {
     const user = userEvent.setup();
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
+    vi.mocked(collectionSearch.fetchCollectionsPage).mockResolvedValue({
       collections: mockCollections,
       numberMatched: 2,
       numberReturned: 2,
@@ -182,7 +183,7 @@ describe('CollectionSearchResultsPage', () => {
 
   it('should navigate to collection when result is clicked', async () => {
     const user = userEvent.setup();
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
+    vi.mocked(collectionSearch.fetchCollectionsPage).mockResolvedValue({
       collections: mockCollections,
       numberMatched: 2,
       numberReturned: 2,
@@ -223,7 +224,7 @@ describe('CollectionSearchResultsPage', () => {
       },
     ];
 
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
+    vi.mocked(collectionSearch.fetchCollectionsPage).mockResolvedValue({
       collections: collectionWithoutSelfLink,
       numberMatched: 1,
       numberReturned: 1,
@@ -263,7 +264,7 @@ describe('CollectionSearchResultsPage', () => {
       },
     ];
 
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
+    vi.mocked(collectionSearch.fetchCollectionsPage).mockResolvedValue({
       collections: collectionWithoutTitle,
       numberMatched: 1,
       numberReturned: 1,
@@ -281,77 +282,9 @@ describe('CollectionSearchResultsPage', () => {
     });
   });
 
-  it('should handle pagination of results', async () => {
-    const user = userEvent.setup();
-    const manyCollections = Array.from({ length: 50 }, (_, i) => ({
-      id: `collection${i}`,
-      title: `Collection ${i}`,
-      description: `Test collection ${i}`,
-      stac_version: '1.0.0',
-      type: 'Collection' as const,
-      links: [{ rel: 'self', href: `https://example.com/collections/collection${i}` }],
-    }));
-
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
-      collections: manyCollections,
-      numberMatched: 50,
-      numberReturned: 50,
-    });
-
-    renderComponent();
-    const searchInput = screen.getByPlaceholderText(/Search by title/i);
-    await user.type(searchInput, 'collection');
-
-    const searchButton = screen.getByRole('button', { name: /Search Collections/i });
-    await user.click(searchButton);
-
-    await waitFor(() => {
-      expect(screen.getByText('Search Results')).toBeInTheDocument();
-    });
-
-    // Verify pagination controls exist
-    const pageInfoElements = screen.getAllByText(/Page \d+ of \d+/);
-    expect(pageInfoElements.length).toBeGreaterThan(0);
-  });
-
-  it('should change page when next button is clicked', async () => {
-    const user = userEvent.setup();
-    const manyCollections = Array.from({ length: 50 }, (_, i) => ({
-      id: `collection${i}`,
-      title: `Collection ${i}`,
-      description: `Test collection ${i}`,
-      stac_version: '1.0.0',
-      type: 'Collection' as const,
-      links: [],
-    }));
-
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
-      collections: manyCollections,
-      numberMatched: 50,
-      numberReturned: 50,
-    });
-
-    renderComponent();
-    const searchInput = screen.getByPlaceholderText(/Search by title/i);
-    await user.type(searchInput, 'collection');
-
-    const searchButton = screen.getByRole('button', { name: /Search Collections/i });
-    await user.click(searchButton);
-
-    await waitFor(() => {
-      expect(screen.getByText('Search Results')).toBeInTheDocument();
-    });
-
-    const nextButtons = screen.getAllByRole('button', { name: /Next →/ });
-    await user.click(nextButtons[0]);
-
-    const pageInfoElements = screen.getAllByText('Page 2 of 2');
-    expect(pageInfoElements.length).toBeGreaterThan(0);
-  });
-
   it('should call onResultsChange when results change', async () => {
     const user = userEvent.setup();
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
+    vi.mocked(collectionSearch.fetchCollectionsPage).mockResolvedValue({
       collections: mockCollections,
       numberMatched: 2,
       numberReturned: 2,
@@ -371,7 +304,7 @@ describe('CollectionSearchResultsPage', () => {
 
   it('should call onResultsChange with false when results are cleared', async () => {
     const user = userEvent.setup();
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
+    vi.mocked(collectionSearch.fetchCollectionsPage).mockResolvedValue({
       collections: mockCollections,
       numberMatched: 2,
       numberReturned: 2,
@@ -396,205 +329,89 @@ describe('CollectionSearchResultsPage', () => {
     });
   });
 
-  it('should reset page to 1 when search is performed', async () => {
-    const user = userEvent.setup();
-    const manyCollections = Array.from({ length: 50 }, (_, i) => ({
-      id: `collection${i}`,
-      title: `Collection ${i}`,
-      description: `Test collection ${i}`,
-      stac_version: '1.0.0',
-      type: 'Collection' as const,
-      links: [],
-    }));
-
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
-      collections: manyCollections,
-      numberMatched: 50,
-      numberReturned: 50,
-    });
-
-    renderComponent();
-    const searchInput = screen.getByPlaceholderText(/Search by title/i);
-    await user.type(searchInput, 'test');
-
-    const searchButton = screen.getByRole('button', { name: /Search Collections/i });
-    await user.click(searchButton);
-
-    await waitFor(() => {
-      expect(screen.getByText('Search Results')).toBeInTheDocument();
-    });
-
-    // Verify it's on page 1
-    const pageInfoElements = screen.getAllByText('Page 1 of 2');
-    expect(pageInfoElements.length).toBeGreaterThan(0);
-  });
-
   it('should not render search results section if no results and not loading', () => {
     renderComponent();
     expect(screen.queryByText('Search Results')).not.toBeInTheDocument();
   });
 
-  it('should disable pagination controls at boundaries', async () => {
-    const user = userEvent.setup();
-    const manyCollections = Array.from({ length: 50 }, (_, i) => ({
-      id: `collection${i}`,
-      title: `Collection ${i}`,
-      description: `Test collection ${i}`,
-      stac_version: '1.0.0',
-      type: 'Collection' as const,
-      links: [],
-    }));
+  describe('server-driven pagination', () => {
+    const firstPageUrl = 'https://example.com/collections?limit=25';
+    const secondPageUrl = 'https://example.com/collections?limit=25&cursor=page2';
 
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
-      collections: manyCollections,
-      numberMatched: 50,
-      numberReturned: 50,
+    const makeCollections = (start: number, count: number): StacCatalog[] =>
+      Array.from({ length: count }, (_, i) => ({
+        id: `collection${start + i}`,
+        title: `Collection ${start + i}`,
+        description: `Test collection ${start + i}`,
+        stac_version: '1.0.0',
+        type: 'Collection' as const,
+        links: [],
+      }));
+
+    beforeEach(() => {
+      vi.mocked(collectionSearch.fetchCollectionsPage).mockImplementation(async (url: string) =>
+        url === secondPageUrl
+          ? { collections: makeCollections(25, 25), numberReturned: 25 }
+          : { collections: makeCollections(0, 25), numberReturned: 25, nextUrl: secondPageUrl }
+      );
     });
 
-    renderComponent();
-    const searchInput = screen.getByPlaceholderText(/Search by title/i);
-    await user.type(searchInput, 'test');
+    const runSearch = async () => {
+      const user = userEvent.setup();
+      renderComponent();
+      await user.type(screen.getByPlaceholderText(/Search by title/i), 'test');
+      await user.click(screen.getByRole('button', { name: /Search Collections/i }));
+      await waitFor(() => {
+        expect(screen.getByText('Search Results')).toBeInTheDocument();
+      });
+      return user;
+    };
 
-    const searchButton = screen.getByRole('button', { name: /Search Collections/i });
-    await user.click(searchButton);
+    it('should only request the next server page when Next is clicked', async () => {
+      const user = await runSearch();
 
-    await waitFor(() => {
-      expect(screen.getByText('Search Results')).toBeInTheDocument();
+      expect(collectionSearch.fetchCollectionsPage).toHaveBeenCalledTimes(1);
+      expect(collectionSearch.fetchCollectionsPage).toHaveBeenCalledWith(firstPageUrl);
+      expect(screen.getAllByText('Page 1').length).toBeGreaterThan(0);
+
+      await user.click(screen.getAllByRole('button', { name: /Next →/ })[0]);
+
+      await waitFor(() => {
+        expect(screen.getAllByText('Page 2').length).toBeGreaterThan(0);
+      });
+      expect(collectionSearch.fetchCollectionsPage).toHaveBeenLastCalledWith(secondPageUrl);
+      expect(screen.getByText('Collection 25')).toBeInTheDocument();
     });
 
-    const prevButtons = screen.getAllByRole('button', { name: /← Previous/ });
-    prevButtons.forEach((btn) => expect(btn).toBeDisabled());
-  });
+    it('should disable Previous on the first page and Next on the last page', async () => {
+      const user = await runSearch();
 
-  it('should click previous button on bottom pagination', async () => {
-    const user = userEvent.setup();
-    const manyCollections = Array.from({ length: 50 }, (_, i) => ({
-      id: `collection${i}`,
-      title: `Collection ${i}`,
-      description: `Test collection ${i}`,
-      stac_version: '1.0.0',
-      type: 'Collection' as const,
-      links: [],
-    }));
+      screen.getAllByRole('button', { name: /← Previous/ }).forEach((btn) => expect(btn).toBeDisabled());
+      expect(screen.getAllByRole('button', { name: /Next →/ })[0]).toBeEnabled();
 
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
-      collections: manyCollections,
-      numberMatched: 50,
-      numberReturned: 50,
+      await user.click(screen.getAllByRole('button', { name: /Next →/ })[1]);
+
+      await waitFor(() => {
+        expect(screen.getAllByText('Page 2').length).toBeGreaterThan(0);
+      });
+      screen.getAllByRole('button', { name: /Next →/ }).forEach((btn) => expect(btn).toBeDisabled());
     });
 
-    renderComponent();
-    const searchInput = screen.getByPlaceholderText(/Search by title/i);
-    await user.type(searchInput, 'test');
+    it('should return to a page already loaded without requesting it again', async () => {
+      const user = await runSearch();
 
-    const searchButton = screen.getByRole('button', { name: /Search Collections/i });
-    await user.click(searchButton);
+      await user.click(screen.getAllByRole('button', { name: /Next →/ })[0]);
+      await waitFor(() => {
+        expect(screen.getAllByText('Page 2').length).toBeGreaterThan(0);
+      });
 
-    await waitFor(() => {
-      expect(screen.getByText('Search Results')).toBeInTheDocument();
-    });
+      await user.click(screen.getAllByRole('button', { name: /← Previous/ })[1]);
 
-    // Go to page 2
-    const nextButtons = screen.getAllByRole('button', { name: /Next →/ });
-    await user.click(nextButtons[0]);
-
-    await waitFor(() => {
-      const pageInfoElements = screen.getAllByText('Page 2 of 2');
-      expect(pageInfoElements.length).toBeGreaterThan(0);
-    });
-
-    // Click the bottom previous button (index 1)
-    const prevButtons = screen.getAllByRole('button', { name: /← Previous/ });
-    await user.click(prevButtons[1]);
-
-    await waitFor(() => {
-      const pageInfoElements = screen.getAllByText('Page 1 of 2');
-      expect(pageInfoElements.length).toBeGreaterThan(0);
-    });
-  });
-
-  it('should click next button on bottom pagination', async () => {
-    const user = userEvent.setup();
-    const manyCollections = Array.from({ length: 50 }, (_, i) => ({
-      id: `collection${i}`,
-      title: `Collection ${i}`,
-      description: `Test collection ${i}`,
-      stac_version: '1.0.0',
-      type: 'Collection' as const,
-      links: [],
-    }));
-
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
-      collections: manyCollections,
-      numberMatched: 50,
-      numberReturned: 50,
-    });
-
-    renderComponent();
-    const searchInput = screen.getByPlaceholderText(/Search by title/i);
-    await user.type(searchInput, 'test');
-
-    const searchButton = screen.getByRole('button', { name: /Search Collections/i });
-    await user.click(searchButton);
-
-    await waitFor(() => {
-      expect(screen.getByText('Search Results')).toBeInTheDocument();
-    });
-
-    // Click the bottom next button (index 1)
-    const nextButtons = screen.getAllByRole('button', { name: /Next →/ });
-    await user.click(nextButtons[1]);
-
-    await waitFor(() => {
-      const pageInfoElements = screen.getAllByText('Page 2 of 2');
-      expect(pageInfoElements.length).toBeGreaterThan(0);
-    });
-  });
-
-  it('should click previous button on top pagination after navigating', async () => {
-    const user = userEvent.setup();
-    const manyCollections = Array.from({ length: 50 }, (_, i) => ({
-      id: `collection${i}`,
-      title: `Collection ${i}`,
-      description: `Test collection ${i}`,
-      stac_version: '1.0.0',
-      type: 'Collection' as const,
-      links: [],
-    }));
-
-    vi.mocked(collectionSearch.searchCollections).mockResolvedValue({
-      collections: manyCollections,
-      numberMatched: 50,
-      numberReturned: 50,
-    });
-
-    renderComponent();
-    const searchInput = screen.getByPlaceholderText(/Search by title/i);
-    await user.type(searchInput, 'test');
-
-    const searchButton = screen.getByRole('button', { name: /Search Collections/i });
-    await user.click(searchButton);
-
-    await waitFor(() => {
-      expect(screen.getByText('Search Results')).toBeInTheDocument();
-    });
-
-    // Go to page 2 using top next button
-    const nextButtons = screen.getAllByRole('button', { name: /Next →/ });
-    await user.click(nextButtons[0]);
-
-    await waitFor(() => {
-      const pageInfoElements = screen.getAllByText('Page 2 of 2');
-      expect(pageInfoElements.length).toBeGreaterThan(0);
-    });
-
-    // Click the top previous button (index 0)
-    const prevButtons = screen.getAllByRole('button', { name: /← Previous/ });
-    await user.click(prevButtons[0]);
-
-    await waitFor(() => {
-      const pageInfoElements = screen.getAllByText('Page 1 of 2');
-      expect(pageInfoElements.length).toBeGreaterThan(0);
+      await waitFor(() => {
+        expect(screen.getAllByText('Page 1').length).toBeGreaterThan(0);
+      });
+      expect(screen.getByText('Collection 0')).toBeInTheDocument();
+      expect(collectionSearch.fetchCollectionsPage).toHaveBeenCalledTimes(2);
     });
   });
 });

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStacNode } from '../hooks/useStacNode';
-import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, getOtherLinks, resolveHref, isCatalog } from '../lib/stac';
+import { getChildLinks, getItemLinks, getItemsLink, getBrowseLinks, getBrowseAssets, getKeywords, getNextPageUrl, getOtherLinks, resolveHref, isCatalog } from '../lib/stac';
 import { ExtentDisplay } from '../components/ExtentDisplay';
 import { LicenseDisplay } from '../components/LicenseDisplay';
 import { BrowseImagesDisplay } from '../components/BrowseImagesDisplay';
@@ -10,6 +10,7 @@ import { AssetLinks } from '../components/AssetLinks';
 import { StorageDisplay } from '../components/StorageDisplay';
 import { LinksDisplay } from '../components/LinksDisplay';
 import { CatalogListingPage } from './CatalogListingPage';
+import { DEFAULT_PAGE_SIZE } from '../lib/pagination';
 import { CollectionItemsPage } from './CollectionItemsPage';
 import { CollectionSearchResultsPage } from './CollectionSearchResultsPage';
 import type { CollectionSearchParams } from '../lib/collectionSearch';
@@ -22,7 +23,7 @@ export function CatalogPage() {
   const [showUrl, setShowUrl] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
   const [hasCollectionSearchResults, setHasCollectionSearchResults] = useState(false);
-  const [collectionSearchParams, setCollectionSearchParams] = useState<CollectionSearchParams>({ limit: 25 });
+  const [collectionSearchParams, setCollectionSearchParams] = useState<CollectionSearchParams>({ limit: DEFAULT_PAGE_SIZE });
   const mainRef = useRef<HTMLMainElement>(null);
   const skipRef = useRef<HTMLAnchorElement>(null);
 
@@ -265,7 +266,7 @@ export function CatalogPage() {
           )}
 
           {!hasCollectionSearchResults && childLinks.length > 0 && (
-            <CatalogListingPage url={url} childLinks={childLinks} />
+            <CatalogListingPage key={url} url={url} childLinks={childLinks} nextPageUrl={getNextPageUrl(catalog?.links, url)} />
           )}
 
           {(itemLinks.length > 0 || itemsSearchLink) && (

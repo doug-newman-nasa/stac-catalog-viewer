@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { CatalogListingPage } from '../../src/pages/CatalogListingPage';
 import type { StacLink } from '../../src/types/stac';
@@ -438,5 +438,98 @@ describe('CatalogListingPage', () => {
     const { container } = renderComponent(manyChildren);
     const paginationDivs = container.querySelectorAll('.pagination');
     expect(paginationDivs.length).toBe(2);
+  });
+
+  describe('loading more children from the server', () => {
+    const nextPageUrl = 'https://example.com/catalog?cursor=page2';
+    const firstPageChildren = Array.from({ length: 25 }, (_, i) => ({
+      rel: 'child' as const,
+      href: `child${i}`,
+      title: `Child ${i}`,
+    }));
+
+    const catalogPage = (start: number, count: number, next?: string) => ({
+      type: 'Catalog',
+      stac_version: '1.0.0',
+      id: 'catalog',
+      description: 'Catalog',
+      links: [
+        ...Array.from({ length: count }, (_, i) => ({ rel: 'child', href: `child${start + i}`, title: `Child ${start + i}` })),
+        ...(next ? [{ rel: 'next', href: next }] : []),
+      ],
+    });
+
+    const renderWithNextPage = () =>
+      render(
+        <BrowserRouter>
+          <CatalogListingPage url={mockUrl} childLinks={firstPageChildren} nextPageUrl={nextPageUrl} />
+        </BrowserRouter>
+      );
+
+    beforeEach(() => {
+      global.fetch = vi.fn().mockImplementation(async (url: string) => {
+        const pages: Record<string, unknown> = {
+          [`${mockUrl}?limit=10`]: catalogPage(0, 10, nextPageUrl),
+          [`${nextPageUrl}&limit=10`]: catalogPage(10, 10),
+          [`${nextPageUrl}&limit=25`]: catalogPage(25, 2),
+        };
+        return { ok: true, json: async () => pages[url] ?? catalogPage(25, 2) };
+      });
+    });
+
+    it('should not request the next server page until Next is clicked', async () => {
+      renderWithNextPage();
+      expect(global.fetch).not.toHaveBeenCalled();
+      expect(screen.getAllByText('Page 1').length).toBeGreaterThan(0);
+
+      fireEvent.click(screen.getAllByRole('button', { name: /Next →/ })[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText('Child 25')).toBeInTheDocument();
+      });
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(global.fetch).mock.calls[0][0]).toBe(`${nextPageUrl}&limit=25`);
+      expect(screen.getAllByText('Page 2 of 2').length).toBeGreaterThan(0);
+    });
+
+    it('should re-request the first page with the new limit when the page size changes', async () => {
+      renderWithNextPage();
+      fireEvent.change(screen.getByDisplayValue('25'), { target: { value: '10' } });
+
+      await waitFor(() => {
+        expect(screen.getByText('Child 0')).toBeInTheDocument();
+      });
+      expect(vi.mocked(global.fetch).mock.calls[0][0]).toBe(`${mockUrl}?limit=10`);
+      expect(screen.queryByText('Child 24')).not.toBeInTheDocument();
+      expect(screen.getAllByText('Page 1').length).toBeGreaterThan(0);
+    });
+
+    it('should carry the page size into the next server page request', async () => {
+      renderWithNextPage();
+      fireEvent.change(screen.getByDisplayValue('25'), { target: { value: '10' } });
+      await waitFor(() => {
+        expect(screen.getByText('Child 0')).toBeInTheDocument();
+      });
+
+      // Page 2 covers children 10-19, which are not loaded yet
+      fireEvent.click(screen.getAllByRole('button', { name: /Next →/ })[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText('Child 10')).toBeInTheDocument();
+      });
+      expect(vi.mocked(global.fetch).mock.calls[1][0]).toBe(`${nextPageUrl}&limit=10`);
+    });
+
+    it('should show an error and stay on the current page when the next server page fails', async () => {
+      global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 503, statusText: 'Service Unavailable' });
+      renderWithNextPage();
+
+      fireEvent.click(screen.getAllByRole('button', { name: /Next →/ })[0]);
+
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toHaveTextContent('HTTP 503: Service Unavailable');
+      });
+      expect(screen.getAllByText('Page 1').length).toBeGreaterThan(0);
+    });
   });
 });
